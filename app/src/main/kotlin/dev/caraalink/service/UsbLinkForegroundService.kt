@@ -138,7 +138,13 @@ class UsbLinkForegroundService : Service() {
                 val address = intent.getStringExtra(EXTRA_CAR_ADDRESS)
                 val target = address?.let { RememberedCar(intent.getStringExtra(EXTRA_CAR_NAME) ?: it, it) }
                     ?: AppSettings.wirelessCar(this)
-                beginWireless(target)
+                beginWireless(target, auto = intent.getBooleanExtra(EXTRA_AUTO, false))
+            }
+            ACTION_REFRESH_FOREGROUND -> {
+                // The app is on screen now, so Android grants the microphone and location types it
+                // refused to a start from the background.
+                // A service this intent created has no link to refresh; one between reconnects still does.
+                if (!foregroundStarted) stopSelf() else runCatching { startForegroundWithMic() }
             }
             ACTION_STOP -> {
                 Log.i(TAG, "onStartCommand: ACTION_STOP")
@@ -308,18 +314,18 @@ class UsbLinkForegroundService : Service() {
         for (extra in foregroundTypeLadder(mic, location)) {
             try {
                 startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or extra)
-                foregroundExtras = extra
+                foregroundStarted = true
                 return
             } catch (e: SecurityException) {
                 Log.w(TAG, "startForeground with extra types $extra refused -- retrying with fewer", e)
             }
         }
         startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
-        foregroundExtras = 0
+        foregroundStarted = true
     }
 
-    /** The microphone and location types the service currently holds. */
-    private var foregroundExtras = 0
+    /** True once this service has gone foreground for a car link. */
+    private var foregroundStarted = false
 
     private fun hasLocation() = hasFineLocation() ||
         checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -331,7 +337,8 @@ class UsbLinkForegroundService : Service() {
 
     // --- wireless ---
 
-    private fun beginWireless(target: RememberedCar?) {
+    /** [auto] is a start nobody asked for (the car's Bluetooth connected): it looks for longer and gives up quietly. */
+    private fun beginWireless(target: RememberedCar?, auto: Boolean = false) {
         // startForegroundService needs startForeground even when there turns out to be nothing to do.
         startForegroundWithMic()
         if (target == null || ConnectionStateHolder.snapshot.link == CarLink.CABLE) {
@@ -352,7 +359,12 @@ class UsbLinkForegroundService : Service() {
         }
         startWirelessSession()
         wirelessLink = WirelessLink(this, wirelessLog, wirelessListener).also { it.scan() }
-        armWirelessTimeout(SEARCH_TIMEOUT_MS) { endWireless(WirelessPhase.NOT_FOUND) }
+        // The head unit is still booting when Bluetooth connects, and the driver has yet to open its phone-link page.
+        if (auto) {
+            armWirelessTimeout(AUTO_SEARCH_TIMEOUT_MS) { endWireless(WirelessPhase.IDLE) }
+        } else {
+            armWirelessTimeout(SEARCH_TIMEOUT_MS) { endWireless(WirelessPhase.NOT_FOUND) }
+        }
     }
 
     private fun startWirelessSession() {
@@ -666,6 +678,7 @@ class UsbLinkForegroundService : Service() {
         private const val OPEN_TO_RECONNECT_ID = 4
         private const val VIDEO_LOWERED_ID = 5
         private const val SEARCH_TIMEOUT_MS = 30_000L
+        private const val AUTO_SEARCH_TIMEOUT_MS = 180_000L
         private const val CONNECT_TIMEOUT_MS = 30_000L
         private const val RECONNECT_WINDOW_MS = 120_000L
         private const val HELLO_WAIT_MS = 3_000L
@@ -687,6 +700,8 @@ class UsbLinkForegroundService : Service() {
             if (now < reconnectUntil) null else WirelessPhase.FAILED
 
         const val ACTION_START_WIRELESS = "dev.caraalink.service.action.START_WIRELESS"
+        const val ACTION_REFRESH_FOREGROUND = "dev.caraalink.service.action.REFRESH_FOREGROUND"
+        const val EXTRA_AUTO = "auto"
         const val EXTRA_CAR_ADDRESS = "car_address"
         const val EXTRA_CAR_NAME = "car_name"
     }

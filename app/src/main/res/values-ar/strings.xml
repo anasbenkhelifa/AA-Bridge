@@ -121,4 +121,9 @@
     <string name="settings_sharp_body">يعرض Android Auto بدقة 1080p بدلًا من 720p. أوضح على شاشات السيارات العريضة، لكنه يُجهد الهاتف أكثر. يعود تلقائيًا إذا سخن الهاتف.</string>
     <string name="thermal_title">هاتفك ساخن</string>
     <string name="thermal_text">أُعيد تشغيل Android Auto بصورة أخف، 720p، ليبرد الهاتف. سيبقى كذلك حتى نهاية هذه الرحلة.</string>
+    <string name="settings_bt_title">الاتصال عند ركوب السيارة</string>
+    <string name="settings_bt_off">يبدأ الاتصال اللاسلكي تلقائيًا عند اتصال هاتفك ببلوتوث السيارة.</string>
+    <string name="settings_bt_on">يبدأ عند اتصال هاتفك بـ %1$s. اترك شاشة السيارة على صفحة ربط الهاتف.</string>
+    <string name="bt_pick_title">أيّها سيارتك؟</string>
+    <string name="bt_pick_empty">لا توجد أجهزة بلوتوث مقترنة. اقرن هاتفك بالسيارة أولًا.</string>
 </resources>

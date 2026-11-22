@@ -184,6 +184,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // A link started from the background (the car's Bluetooth connecting) runs without the microphone
+        // and location; with the app on screen the service can take them.
+        if (dev.caraalink.connection.ConnectionStateHolder.snapshot.link != dev.caraalink.connection.CarLink.NONE) {
+            runCatching {
+                startService(Intent(this, UsbLinkForegroundService::class.java).setAction(UsbLinkForegroundService.ACTION_REFRESH_FOREGROUND))
+            }
+        }
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
