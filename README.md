@@ -66,6 +66,8 @@ In the app's Settings:
 
 When the car connects, its screen opens on AA Bridge's home screen: the time, the speed, music buttons, and tiles. The car's Home button, or Exit in Android Auto, comes back to it. (Advanced > Open on the car home screen, off, opens Android Auto straight away as before.)
 
+Every one of these screens has a small pill at its left edge with Home (⌂) and, where it applies, Back (←), so nothing depends on the car's own buttons, which some cars keep for themselves. Android Auto gets a Home button there too (Advanced > Home button over Android Auto).
+
 - **Open Android Auto.**
 - **YouTube** and **Claude:** each opens as a web page on the car screen. Nothing to set up, the phone stays free, and sound plays through the phone as usual. To sign in, use Settings > YouTube on the car screen (or Claude) on the phone, where there is a keyboard; the car then stays signed in. Google may refuse sign-in inside an app, in which case YouTube still works signed out. The car's Back button goes back a page. Advanced > Extra web page adds a tile for any other address.
 - **Apps:** the phone's apps as a grid. The one you pick opens on the car screen itself, laid out for it, while the phone stays free. The car's Back button is the app's Back. This needs [Shizuku](https://shizuku.rikka.app/), a free app that lends AA Bridge adb's rights: install it, start it (it walks you through wireless debugging, and has to be started again after the phone restarts), then tap Apps on the car screen under Settings in AA Bridge to allow it. Some apps refuse to run on a second screen, and the keyboard appears on the phone.

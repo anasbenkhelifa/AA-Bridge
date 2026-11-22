@@ -36,6 +36,7 @@ class CarWebPresentation(
     context: Context,
     display: Display,
     private val url: String,
+    private val onHome: () -> Unit,
 ) : Presentation(context, display) {
 
     private val main = Handler(Looper.getMainLooper())
@@ -83,6 +84,8 @@ class CarWebPresentation(
             visibility = View.GONE
         }
         root.addView(cover, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        // Back goes back a page, and home from the first one.
+        CarNav.attach(root, onHome, onBack = { if (!goBack()) onHome() })
         setContentView(root)
         view.loadUrl(url)
     }

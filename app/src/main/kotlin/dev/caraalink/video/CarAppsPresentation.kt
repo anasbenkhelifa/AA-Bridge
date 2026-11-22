@@ -32,14 +32,17 @@ class CarAppsPresentation(
     context: Context,
     display: Display,
     private val onPick: (component: String) -> Unit,
+    private val onHome: () -> Unit,
 ) : Presentation(context, display) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ShellBridge.connect(context)
         val state = ShellBridge.state(context)
+        val root = FrameLayout(context)
+        setContentView(root)
         if (state != ShellBridge.State.READY) {
-            setContentView(TextView(context).apply {
+            root.addView(TextView(context).apply {
                 setText(needsText(state))
                 textSize = 26f
                 setTextColor(CarWidgets.TEXT)
@@ -47,6 +50,7 @@ class CarAppsPresentation(
                 setPadding(dp(64), dp(32), dp(64), dp(32))
                 setBackgroundColor(CarWidgets.BACKGROUND)
             })
+            CarNav.attach(root, onHome)
             return
         }
         val apps = ShellBridge.launchableApps(context)
@@ -54,7 +58,7 @@ class CarAppsPresentation(
             setBackgroundColor(CarWidgets.BACKGROUND)
             numColumns = COLUMNS
             verticalSpacing = dp(12)
-            setPadding(dp(24), dp(20), dp(24), dp(20))
+            setPadding(dp(84), dp(20), dp(24), dp(20))
             clipToPadding = false
             adapter = object : BaseAdapter() {
                 override fun getCount() = apps.size
@@ -80,7 +84,8 @@ class CarAppsPresentation(
             }
             setOnItemClickListener { _, _, position, _ -> onPick(apps[position].component) }
         }
-        setContentView(grid)
+        root.addView(grid)
+        CarNav.attach(root, onHome)
     }
 
     private fun dp(v: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), context.resources.displayMetrics).toInt()
@@ -105,6 +110,7 @@ class CarAppPresentation(
     context: Context,
     display: Display,
     private val component: String,
+    private val onHome: () -> Unit,
 ) : Presentation(context, display) {
 
     private val logger = DiagnosticLogger(context, "car-app")
@@ -132,6 +138,10 @@ class CarAppPresentation(
         }
         texture.setOnTouchListener { _, ev -> onTouch(ev); true }
         root.addView(texture, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        CarNav.attach(root, onHome, onBack = {
+            val id = displayId
+            if (id >= 0) runCatching { ShellBridge.service?.key(id, android.view.KeyEvent.KEYCODE_BACK) }
+        })
         setContentView(root)
     }
 

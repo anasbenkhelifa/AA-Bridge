@@ -25,7 +25,7 @@ import dev.caraalink.mirror.PhoneMirror
 import dev.caraalink.settings.AppSettings
 
 /** The phone's screen on the car screen, fitted whole, with the car's touches played back on the phone. */
-class MirrorCarPresentation(context: Context, display: Display) : Presentation(context, display) {
+class MirrorCarPresentation(context: Context, display: Display, private val onHome: () -> Unit) : Presentation(context, display) {
 
     private val main = Handler(Looper.getMainLooper())
     private lateinit var texture: TextureView
@@ -71,6 +71,9 @@ class MirrorCarPresentation(context: Context, display: Display) : Presentation(c
         cover = overlay(Color.BLACK).apply { setText(R.string.mirror_moving) }
         root.addView(message, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         root.addView(cover, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        CarNav.attach(root, onHome, onBack = {
+            runCatching { dev.caraalink.shell.ShellBridge.service?.key(Display.DEFAULT_DISPLAY, android.view.KeyEvent.KEYCODE_BACK) }
+        })
         setContentView(root)
     }
 

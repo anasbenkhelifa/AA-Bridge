@@ -204,6 +204,9 @@ object AppSettings {
     /** A strip beside Android Auto with the time, the speed and a home button (dev.caraalink.video.AaSidebar). */
     fun aaSidebar(context: Context): Boolean = prefs(context).getBoolean("aa_sidebar", false)
 
+    /** A small floating Home button over Android Auto, for cars whose own Home button stays with the car. */
+    fun aaHomeButton(context: Context): Boolean = prefs(context).getBoolean("aa_home_button", true)
+
     /** A small speed readout in a corner of Android Auto. The side strip already has one. */
     fun aaSpeedBadge(context: Context): Boolean = prefs(context).getBoolean("aa_speed_badge", false)
 

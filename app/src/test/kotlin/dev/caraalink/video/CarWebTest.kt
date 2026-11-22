@@ -33,4 +33,16 @@ class CarWebTest {
         assertNull(CarWebPresentation.normalizeUrl("  "))
         assertNull(CarWebPresentation.normalizeUrl(null))
     }
+
+    @Test
+    fun `every screen has Home, and Back above it only where there is one`() {
+        assertEquals(listOf(CarNav.HOME), CarNav.buttons({}, null).map { it.first })
+        assertEquals(listOf(CarNav.BACK, CarNav.HOME), CarNav.buttons({}, {}).map { it.first })
+
+        var went = ""
+        val buttons = CarNav.buttons({ went += "home" }, { went += "back" })
+        buttons[0].second()
+        buttons[1].second()
+        assertEquals("backhome", went)
+    }
 }

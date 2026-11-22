@@ -114,6 +114,10 @@ class CarDisplay(
         if ((presentation as? CarWebPresentation)?.goBack() != true) showStatus(CarScreen.CLOSED)
     }
 
+    private fun goHome() {
+        showStatus(CarScreen.CLOSED)
+    }
+
     private var webUrl: String? = null
     private var appComponent: String? = null
     private var aaVideoSize: Pair<Int, Int>? = null
@@ -127,10 +131,10 @@ class CarDisplay(
         presentation = try {
             when {
                 mode == Mode.AA && aaVideoSize != null -> aaPresentation(display)
-                mode == Mode.MIRROR -> MirrorCarPresentation(context, display)
-                mode == Mode.APPS -> CarAppsPresentation(context, display, ::showApp)
-                mode == Mode.WEB && webUrl != null -> CarWebPresentation(context, display, webUrl!!)
-                mode == Mode.APP && appComponent != null -> CarAppPresentation(context, display, appComponent!!)
+                mode == Mode.MIRROR -> MirrorCarPresentation(context, display, ::goHome)
+                mode == Mode.APPS -> CarAppsPresentation(context, display, ::showApp, ::goHome)
+                mode == Mode.WEB && webUrl != null -> CarWebPresentation(context, display, webUrl!!, ::goHome)
+                mode == Mode.APP && appComponent != null -> CarAppPresentation(context, display, appComponent!!, ::goHome)
                 else -> {
                     mode = Mode.STATUS
                     // Closed is nothing going wrong, so it gets the home screen; the rest are messages.
@@ -152,6 +156,7 @@ class CarDisplay(
             onSurface = { s -> aaOnSurface?.invoke(s) },
             onTouch = { pointers, actionIndex, action -> aaOnTouch?.invoke(pointers, actionIndex, action) },
             onHome = onLeaveAa,
+            onOpenWeb = ::showWeb,
         )
     }
 

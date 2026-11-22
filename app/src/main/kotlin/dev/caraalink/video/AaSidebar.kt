@@ -18,7 +18,8 @@ import dev.caraalink.link.CarMotion
 /**
  * What sits beside or on top of Android Auto on the car screen. Android Auto
  * only draws 16:9 shapes, so on a wide screen a strip at the side costs it
- * nothing it could use well: the time, the speed and a way home.
+ * nothing it could use well: the time, the speed, a way home, and YouTube
+ * and Claude one tap from inside Android Auto.
  */
 object AaSidebar {
     /** The strip's share of the screen's width. */
@@ -27,7 +28,7 @@ object AaSidebar {
     /** The width left for Android Auto on a car screen [carWidth] wide. */
     fun contentWidth(carWidth: Int, sidebar: Boolean): Int = if (sidebar) (carWidth * (1 - FRACTION)).toInt() else carWidth
 
-    fun view(context: Context, onHome: () -> Unit): View = LinearLayout(context).apply {
+    fun view(context: Context, onHome: () -> Unit, onOpenWeb: (url: String) -> Unit = {}): View = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER
         setBackgroundColor(CarWidgets.BACKGROUND)
@@ -39,24 +40,28 @@ object AaSidebar {
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
         })
-        addView(speedText(context, 54f), spaced(context, 20))
+        addView(speedText(context, 44f), spaced(context, 12))
         addView(TextView(context).apply {
             setText(R.string.car_kmh)
             textSize = 16f
             setTextColor(CarWidgets.MUTED)
             gravity = Gravity.CENTER
         })
-        addView(TextView(context).apply {
-            setText(R.string.car_home)
-            textSize = 20f
-            setTextColor(CarWidgets.TEXT)
-            typeface = Typeface.DEFAULT_BOLD
-            gravity = Gravity.CENTER
-            setPadding(dp(context, 18), dp(context, 12), dp(context, 18), dp(context, 12))
-            background = GradientDrawable().apply { setColor(CarWidgets.SURFACE); cornerRadius = dp(context, 16).toFloat() }
-            isClickable = true
-            setOnClickListener { onHome() }
-        }, spaced(context, 28))
+        addView(button(context, context.getString(R.string.car_home), onHome), spaced(context, 22))
+        addView(button(context, "YouTube") { onOpenWeb(CarWebPresentation.YOUTUBE) }, spaced(context, 10))
+        addView(button(context, "Claude") { onOpenWeb(CarWebPresentation.CLAUDE) }, spaced(context, 10))
+    }
+
+    private fun button(context: Context, label: String, onClick: () -> Unit) = TextView(context).apply {
+        text = label
+        textSize = 18f
+        setTextColor(CarWidgets.TEXT)
+        typeface = Typeface.DEFAULT_BOLD
+        gravity = Gravity.CENTER
+        setPadding(dp(context, 16), dp(context, 10), dp(context, 16), dp(context, 10))
+        background = GradientDrawable().apply { setColor(CarWidgets.SURFACE); cornerRadius = dp(context, 16).toFloat() }
+        isClickable = true
+        setOnClickListener { onClick() }
     }
 
     /** A small speed readout for a corner of Android Auto, when there is no strip. */

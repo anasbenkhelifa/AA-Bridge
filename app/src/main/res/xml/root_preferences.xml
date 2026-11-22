@@ -91,9 +91,14 @@
             android:entryValues="@array/aa_audio_route_values"
             android:defaultValue="phone_direct" />
         <SwitchPreferenceCompat
+            android:key="aa_home_button"
+            android:title="Home button over Android Auto"
+            android:summary="A small button at the edge of Android Auto that goes to the car home screen, where YouTube, Claude and the other tiles are."
+            android:defaultValue="true" />
+        <SwitchPreferenceCompat
             android:key="aa_sidebar"
             android:title="Side strip next to Android Auto"
-            android:summary="A strip at the edge of the car screen with the time, the speed and a home button. Android Auto is drawn for the space that is left. Best on wide screens."
+            android:summary="A strip at the edge of the car screen with the time, the speed, a home button, and YouTube and Claude buttons. Android Auto is drawn for the space that is left. Best on wide screens."
             android:defaultValue="false" />
         <SwitchPreferenceCompat
             android:key="aa_speed_badge"
