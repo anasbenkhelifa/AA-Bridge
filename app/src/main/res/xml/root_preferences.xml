@@ -91,6 +91,11 @@
             android:entryValues="@array/aa_audio_route_values"
             android:defaultValue="phone_direct" />
         <SwitchPreferenceCompat
+            android:key="aa_thermal_guard"
+            android:title="Lower video when the phone overheats"
+            android:summary="When the phone reports severe heat, Android Auto restarts once at 720p and 30 fps and stays there until the drive ends. Nothing changes if it is already at that."
+            android:defaultValue="true" />
+        <SwitchPreferenceCompat
             android:key="aa_parked_detection"
             android:title="Parked detection"
             android:summary="Tell Android Auto the car is parked only while GPS shows it stopped, so the keyboard and parked-only apps work then. While moving, or without a GPS fix, the normal driving limits apply. Needs location allowed."

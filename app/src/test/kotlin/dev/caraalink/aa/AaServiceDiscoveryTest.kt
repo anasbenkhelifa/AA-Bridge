@@ -65,6 +65,21 @@ class AaServiceDiscoveryTest {
     }
 
     @Test
+    fun `a hot phone gets 720p in the same orientation, and nothing smaller is raised`() {
+        assertEquals(AaResolution.R1280X720, AaServiceDiscovery.cooler(AaResolution.R1920X1080, portrait = false))
+        assertEquals(AaResolution.R720X1280, AaServiceDiscovery.cooler(AaResolution.R1440X2560, portrait = true))
+        assertEquals(AaResolution.R1280X720, AaServiceDiscovery.cooler(AaResolution.R1280X720, portrait = false))
+        assertEquals(AaResolution.R800X480, AaServiceDiscovery.cooler(AaResolution.R800X480, portrait = false))
+    }
+
+    @Test
+    fun `stepping the resolution down scales a density with it, so the layout stays the same`() {
+        // 240 at 1080p and 160 at 720p both lay AA out 1280dp wide.
+        assertEquals(160, AaServiceDiscovery.scaledDensity(240, AaResolution.R1920X1080, AaResolution.R1280X720))
+        assertEquals(240, AaServiceDiscovery.scaledDensity(240, AaResolution.R1920X1080, AaResolution.R1920X1080))
+    }
+
+    @Test
     fun `unknown car dimensions (no car connected yet) means no crop`() {
         val (widthMargin, heightMargin) = AaServiceDiscovery.autoMargin(AaResolution.R1920X1080, carWidth = 0, carHeight = 0)
 

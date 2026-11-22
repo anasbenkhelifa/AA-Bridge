@@ -268,7 +268,8 @@ class CarSession(
     private fun logStats() {
         val (req, sent, enc) = statsAt
         logger.log("stats 5s: requests=${frameRequests - req} sent=${framesSent - sent} encoded=${framesEncoded - enc} " +
-            "queued=${pullQueue.size} pending=$pendingRequests | ${dev.caraalink.diagnostics.PerfStats.summary()}")
+            "queued=${pullQueue.size} pending=$pendingRequests thermal=${dev.caraalink.video.ThermalGuard.status} " +
+            "| ${dev.caraalink.diagnostics.PerfStats.summary()}")
         statsAt = Triple(frameRequests, framesSent, framesEncoded)
     }
 

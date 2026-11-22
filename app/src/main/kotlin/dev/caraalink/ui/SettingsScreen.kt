@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -72,6 +73,7 @@ fun SettingsScreen(onBack: () -> Unit, onHelp: () -> Unit, onAbout: () -> Unit, 
     SubScreen(stringResource(R.string.settings), onBack) {
         WirelessCarRow()
         DashGroup {
+            SharperPictureRow()
             SettingsRow(painterResource(R.drawable.ic_touch_app), stringResource(R.string.settings_car_buttons), onCarButtons)
         }
         DashGroup {
@@ -108,6 +110,26 @@ private fun WirelessCarRow() {
             },
         )
     }
+}
+
+/** 1080p instead of 720p. A running Android Auto session restarts to pick it up, as it does from Advanced. */
+@Composable
+private fun SharperPictureRow() {
+    val context = LocalContext.current
+    var sharp by remember { mutableStateOf(!AppSettings.videoDownscale720p(context)) }
+    val set: (Boolean) -> Unit = { value ->
+        sharp = value
+        AppSettings.setVideoDownscale720p(context, !value)
+        dev.caraalink.aa.AaReconnectBus.onVideoSettingsChanged?.invoke()
+    }
+    ListItem(
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        headlineContent = { Text(stringResource(R.string.settings_sharp_title), style = MaterialTheme.typography.bodyLarge) },
+        supportingContent = { Text(stringResource(R.string.settings_sharp_body)) },
+        leadingContent = { Icon(painterResource(R.drawable.ic_devices), contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+        trailingContent = { Switch(checked = sharp, onCheckedChange = set) },
+        modifier = Modifier.clickable { set(!sharp) },
+    )
 }
 
 /** A dashboard tile holding a few rows. */

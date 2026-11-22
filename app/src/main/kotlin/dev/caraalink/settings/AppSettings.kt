@@ -180,6 +180,13 @@ object AppSettings {
     fun parkedDetection(context: Context): Boolean =
         prefs(context).getBoolean("aa_parked_detection", true)
 
+    /** Lower the video to 720p at 30 fps for the rest of a drive once the phone reports severe heat (ThermalGuard). */
+    fun thermalGuard(context: Context): Boolean =
+        prefs(context).getBoolean("aa_thermal_guard", true)
+
+    fun setVideoDownscale720p(context: Context, value: Boolean) =
+        prefs(context).edit().putBoolean("video_downscale_720p", value).apply()
+
     /** Keep the per-car settings (CarProfiles) separately for each head unit and bring them back when it connects. */
     fun rememberPerCar(context: Context): Boolean =
         prefs(context).getBoolean("car_memory", true)

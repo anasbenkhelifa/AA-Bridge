@@ -122,4 +122,8 @@
     <string name="action_call">Answer call</string>
     <string name="action_end_call">End call</string>
     <string name="cancel">Cancel</string>
+    <string name="settings_sharp_title">Sharper picture</string>
+    <string name="settings_sharp_body">Draws Android Auto at 1080p instead of 720p. Crisper on wide car screens, harder on the phone. Drops back by itself if the phone gets too hot.</string>
+    <string name="thermal_title">Your phone is hot</string>
+    <string name="thermal_text">Android Auto restarted with a lighter picture, 720p, to let the phone cool. It stays that way for this drive.</string>
 </resources>

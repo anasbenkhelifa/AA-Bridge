@@ -218,6 +218,7 @@ class UsbLinkForegroundService : Service() {
         }
         ConnectionStateHolder.update { it.copy(link = CarLink.CABLE, wireless = WirelessPhase.IDLE, suggestion = null) }
         Log.i(TAG, "beginSession: ${accessory.manufacturer}/${accessory.model}")
+        dev.caraalink.video.ThermalGuard.start(this, ::notifyVideoLowered)
         sniffer?.stop()
         adbProbe?.stop()
         session?.stop()
@@ -264,6 +265,7 @@ class UsbLinkForegroundService : Service() {
         runCatching { unregisterReceiver(detachReceiver) }
         sniffer?.stop()
         adbProbe?.stop()
+        dev.caraalink.video.ThermalGuard.stop(this)
         releaseWakeLock()
         super.onDestroy()
     }
@@ -340,6 +342,7 @@ class UsbLinkForegroundService : Service() {
         wirelessLog.log("start wireless: looking for '${target.name}' ${target.address}")
         stopping = false
         acquireWakeLock()
+        dev.caraalink.video.ThermalGuard.start(this, ::notifyVideoLowered)
         closeWireless(disconnect = false)
         wirelessTarget = target
         wirelessStreamed = false
@@ -513,6 +516,18 @@ class UsbLinkForegroundService : Service() {
         runCatching { getSystemService(NotificationManager::class.java).notify(OPEN_TO_RECONNECT_ID, n) }
     }
 
+    /** Says why Android Auto just restarted with a softer picture; quiet, the driver isn't looking at the phone. */
+    private fun notifyVideoLowered() {
+        val n = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_bridge)
+            .setContentTitle(getString(R.string.thermal_title))
+            .setContentText(getString(R.string.thermal_text))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(getString(R.string.thermal_text)))
+            .setAutoCancel(true)
+            .build()
+        runCatching { getSystemService(NotificationManager::class.java).notify(VIDEO_LOWERED_ID, n) }
+    }
+
     /** Transport-level read/write failure, as opposed to a clean close or a real unplug. */
     private fun isTransportIoFailure(reason: String): Boolean =
         reason.contains("read failed", ignoreCase = true) || reason.contains("write failed", ignoreCase = true) ||
@@ -568,6 +583,7 @@ class UsbLinkForegroundService : Service() {
         sniffer?.stop()
         adbProbe?.stop()
         adbProbe = null
+        dev.caraalink.video.ThermalGuard.stop(this)
         releaseWakeLock()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -648,6 +664,7 @@ class UsbLinkForegroundService : Service() {
         /** QDLink ignores a cable session within 6 s of the last one (Shams-eldin's Emgrand Auto, from QDLink's code). */
         private val QD_RECONNECT_DELAYS_MS = longArrayOf(6_000, 6_000, 10_000, 30_000, 60_000)
         private const val OPEN_TO_RECONNECT_ID = 4
+        private const val VIDEO_LOWERED_ID = 5
         private const val SEARCH_TIMEOUT_MS = 30_000L
         private const val CONNECT_TIMEOUT_MS = 30_000L
         private const val RECONNECT_WINDOW_MS = 120_000L

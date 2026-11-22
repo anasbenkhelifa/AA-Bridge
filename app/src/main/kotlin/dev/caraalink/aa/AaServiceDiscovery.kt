@@ -186,7 +186,7 @@ object AaServiceDiscovery {
         val defaultRes = if (AppSettings.videoDownscale720p(context)) {
             if (portrait) AaResolution.R720X1280 else AaResolution.R1280X720
         } else if (portrait) AaResolution.R1080X1920 else AaResolution.R1920X1080
-        val resolution = if (customWh != null) {
+        val chosen = if (customWh != null) {
             val (w, h) = customWh
             candidates.minByOrNull { kotlin.math.abs(it.width * it.height - w * h) } ?: defaultRes
         } else if (preview) {
@@ -196,14 +196,17 @@ object AaServiceDiscovery {
         } else {
             defaultRes
         }
-        val frameRate = if (AppSettings.frameRate(context) >= 60) FPS_60 else FPS_30
+        // A phone in severe heat gets 720p at 30 fps whatever was chosen (see ThermalGuard).
+        val hot = dev.caraalink.video.ThermalGuard.limited
+        val resolution = if (hot) cooler(chosen, portrait) else chosen
+        val frameRate = if (!hot && AppSettings.frameRate(context) >= 60) FPS_60 else FPS_30
         // Same principle as Custom resolution above: a manually-set DPI is
         // still the owner's explicit choice, honoured in preview too --
         // only the *auto* case gets overridden with the phone's own density.
         val density = if (preview && AppSettings.videoDpiAuto(context)) {
             context.resources.displayMetrics.densityDpi
         } else {
-            AppSettings.videoDpi(context, resolution.width, resolution.height)
+            scaledDensity(AppSettings.videoDpi(context, chosen.width, chosen.height), chosen, resolution)
         }
         // Advertise the touchscreen at the CONTENT size, not the full video
         // frame -- confirmed from mrmees/open-android-auto's own docs
@@ -270,6 +273,21 @@ object AaServiceDiscovery {
     }
 
     private const val ASPECT_EPSILON = 0.01f
+
+    /** [chosen], or 720p in the same orientation when [chosen] is bigger than that. */
+    fun cooler(chosen: AaResolution, portrait: Boolean): AaResolution {
+        val cap = if (portrait) AaResolution.R720X1280 else AaResolution.R1280X720
+        return if (chosen.width * chosen.height > cap.width * cap.height) cap else chosen
+    }
+
+    /**
+     * The density that lays AA's interface out at [to] the way [density] does
+     * at [from]: density follows the short side, the same rule the automatic
+     * setting uses, so a step down in resolution keeps the same layout with
+     * fewer pixels rather than a different, larger one.
+     */
+    fun scaledDensity(density: Int, from: AaResolution, to: AaResolution): Int =
+        if (from == to) density else density * minOf(to.width, to.height) / minOf(from.width, from.height)
 
     /**
      * Serialized `ServiceDiscoveryResponse`. Deliberately minimal: a video

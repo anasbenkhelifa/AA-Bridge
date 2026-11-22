@@ -117,4 +117,8 @@
     <string name="action_call">الرد على المكالمة</string>
     <string name="action_end_call">إنهاء المكالمة</string>
     <string name="cancel">إلغاء</string>
+    <string name="settings_sharp_title">صورة أوضح</string>
+    <string name="settings_sharp_body">يعرض Android Auto بدقة 1080p بدلًا من 720p. أوضح على شاشات السيارات العريضة، لكنه يُجهد الهاتف أكثر. يعود تلقائيًا إذا سخن الهاتف.</string>
+    <string name="thermal_title">هاتفك ساخن</string>
+    <string name="thermal_text">أُعيد تشغيل Android Auto بصورة أخف، 720p، ليبرد الهاتف. سيبقى كذلك حتى نهاية هذه الرحلة.</string>
 </resources>
