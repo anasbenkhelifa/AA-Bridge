@@ -219,8 +219,8 @@ object AppSettings {
     /** Connecting shows the car home screen; off opens Android Auto straight away, as the app always used to. */
     fun startOnHome(context: Context): Boolean = prefs(context).getBoolean("start_on_home", true)
 
-    /** One more web page for the car home screen, as typed; empty for none. */
-    fun carWebPage(context: Context): String? = prefs(context).getString("car_web_page", null)
+    /** More web pages for the car home screen, as typed: `Tarteel=tarteel.ai, Quran=quran.com`. */
+    fun carWebPages(context: Context): String? = prefs(context).getString("car_web_pages", null)
 
     /** Keep the per-car settings (CarProfiles) separately for each head unit and bring them back when it connects. */
     fun rememberPerCar(context: Context): Boolean =

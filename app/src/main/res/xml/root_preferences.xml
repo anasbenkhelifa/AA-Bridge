@@ -129,9 +129,9 @@
             android:summary="When the car connects, show the home screen with its tiles. Off opens Android Auto straight away."
             android:defaultValue="true" />
         <EditTextPreference
-            android:key="car_web_page"
-            android:title="Extra web page"
-            android:summary="Adds a Web tile to the car home screen for this address, next to YouTube and Claude. Leave empty for none." />
+            android:key="car_web_pages"
+            android:title="More web apps"
+            android:summary="Adds tiles to the car home screen next to YouTube and Claude. Type names and addresses separated by commas, like: Tarteel=tarteel.ai, Quran=quran.com, WhatsApp=web.whatsapp.com" />
         <SwitchPreferenceCompat
             android:key="car_weather"
             android:title="Weather on the car home screen"

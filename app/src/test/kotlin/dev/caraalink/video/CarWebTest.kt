@@ -45,4 +45,48 @@ class CarWebTest {
         buttons[1].second()
         assertEquals("backhome", went)
     }
+
+    @Test
+    fun `extra web apps are typed as name and address pairs`() {
+        val pages = CarWebPresentation.parsePages("Tarteel=tarteel.ai, quran.com ,WhatsApp = https://web.whatsapp.com/, =, Broken=")
+
+        assertEquals(listOf("Tarteel", "Quran", "WhatsApp"), pages.map { it.name })
+        assertEquals(listOf("https://tarteel.ai", "https://quran.com", "https://web.whatsapp.com/"), pages.map { it.url })
+        assertEquals(emptyList<Any>(), CarWebPresentation.parsePages(null))
+    }
+
+    @Test
+    fun `a site is named after its address, and matched to its app for the icon`() {
+        assertEquals("Youtube", CarWebPresentation.siteName("https://m.youtube.com/"))
+        assertEquals("Whatsapp", CarWebPresentation.siteName("https://web.whatsapp.com/x"))
+        assertEquals("com.google.android.youtube", CarWebPresentation.appFor(CarWebPresentation.YOUTUBE))
+        assertEquals("com.anthropic.claude", CarWebPresentation.appFor(CarWebPresentation.CLAUDE))
+        assertNull(CarWebPresentation.appFor("https://notyoutube.com.example.org/"))
+        assertNull(CarWebPresentation.appFor("https://example.org/"))
+    }
+
+    @Test
+    fun `typed text reaches the page as a safe string literal`() {
+        assertEquals("document.execCommand('insertText',false,\"a\")", CarWebPresentation.insertTextScript("a"))
+        assertEquals("\"\\\"\\\\\"", CarWebPresentation.jsString("\"\\"))
+        assertEquals("\"\\u003c/script>\"", CarWebPresentation.jsString("</script>"))
+        assertEquals("\"ع\"", CarWebPresentation.jsString("ع"))
+    }
+
+    @Test
+    fun `the keyboard has English with shift, Arabic, and numbers with symbols`() {
+        val english = CarKeyboard.rows(CarKeyboard.Layout.ENGLISH, shift = false)
+        assertEquals(listOf(10, 9, 7), english.map { it.size })
+        assertEquals("Q", CarKeyboard.rows(CarKeyboard.Layout.ENGLISH, shift = true)[0][0])
+        val arabic = CarKeyboard.rows(CarKeyboard.Layout.ARABIC, shift = false).flatten()
+        assertEquals(arabic.size, arabic.toSet().size)
+        for (letter in "ابتثجحخدذرزسشصضطظعغفقكلمنهوي") assertEquals(true, letter.toString() in arabic)
+        val symbols = CarKeyboard.rows(CarKeyboard.Layout.SYMBOLS, shift = false).flatten()
+        for (c in "0123456789@.?") assertEquals(true, c.toString() in symbols)
+    }
+
+    @Test
+    fun `a tile without an icon keeps one colour per name`() {
+        assertEquals(CarHomePresentation.discColor("Tarteel"), CarHomePresentation.discColor("Tarteel"))
+    }
 }

@@ -52,8 +52,8 @@ class CarHomePresentation(
         super.onCreate(savedInstanceState)
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
-            setBackgroundColor(CarWidgets.BACKGROUND)
-            setPadding(dp(40), dp(28), dp(40), dp(28))
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(0xFF0E1A20.toInt(), 0xFF070B0E.toInt(), 0xFF0A1512.toInt()))
+            setPadding(dp(40), dp(28), dp(32), dp(28))
         }
 
         val left = column(Gravity.CENTER_VERTICAL or Gravity.START)
@@ -66,16 +66,16 @@ class CarHomePresentation(
         left.addView(speedRow, gap(14))
         left.addView(mediaRow().apply { gravity = Gravity.START }, gap(18))
 
-        // What can be opened from here, most used first. Tiles for things that aren't set are left out.
+        // What can be opened from here, most used first.
+        val pm = context.packageManager
+        fun appIcon(pkg: String?) = pkg?.let { runCatching { pm.getApplicationIcon(it) }.getOrNull() }
         val tiles = buildList {
-            add(tile(context.getString(R.string.car_open_aa), CarWidgets.BRAND, onOpenAa))
-            add(tile("YouTube", CarWidgets.SURFACE) { onOpenWeb(CarWebPresentation.YOUTUBE) })
-            add(tile("Claude", CarWidgets.SURFACE) { onOpenWeb(CarWebPresentation.CLAUDE) })
-            CarWebPresentation.normalizeUrl(AppSettings.carWebPage(context))?.let { page ->
-                add(tile(context.getString(R.string.car_web), CarWidgets.SURFACE) { onOpenWeb(page) })
-            }
-            add(tile(context.getString(R.string.car_apps), CarWidgets.SURFACE, onOpenApps))
-            add(tile(context.getString(R.string.car_phone_screen), CarWidgets.SURFACE, onOpenMirror))
+            add(tile(context.getString(R.string.car_android_auto), appIcon(GEARHEAD), accent = true, onClick = onOpenAa))
+            val pages = listOf(CarWebPresentation.Companion.Page("YouTube", CarWebPresentation.YOUTUBE), CarWebPresentation.Companion.Page("Claude", CarWebPresentation.CLAUDE)) +
+                CarWebPresentation.parsePages(AppSettings.carWebPages(context))
+            for (page in pages) add(tile(page.name, appIcon(CarWebPresentation.appFor(page.url))) { onOpenWeb(page.url) })
+            add(tile(context.getString(R.string.car_apps), null, symbol = "▦", onClick = onOpenApps))
+            add(tile(context.getString(R.string.car_phone_screen), null, symbol = "📱", onClick = onOpenMirror))
         }
         val right = column(Gravity.CENTER)
         for (rowTiles in tiles.chunked(TILES_PER_ROW)) {
@@ -89,7 +89,7 @@ class CarHomePresentation(
         }
 
         root.addView(left, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
-        root.addView(right, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.7f))
+        root.addView(right, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 2.1f))
         setContentView(root)
     }
 
@@ -133,13 +133,45 @@ class CarHomePresentation(
         audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, code))
     }
 
-    private fun tile(text: String, color: Int, onClick: () -> Unit) = TextView(context).apply {
-        this.text = text
-        textSize = 22f
-        setTextColor(Color.WHITE)
-        typeface = Typeface.DEFAULT_BOLD
+    /** A card with the app's own icon where the phone has it, else a letter or symbol in a coloured disc. */
+    private fun tile(
+        name: String,
+        icon: android.graphics.drawable.Drawable?,
+        accent: Boolean = false,
+        symbol: String? = null,
+        onClick: () -> Unit,
+    ) = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER
-        background = GradientDrawable().apply { setColor(color); cornerRadius = dp(24).toFloat() }
+        background = GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            if (accent) intArrayOf(0xFF12A594.toInt(), 0xFF0B6F66.toInt()) else intArrayOf(0xFF1B2A32.toInt(), 0xFF121C22.toInt()),
+        ).apply {
+            cornerRadius = dp(26).toFloat()
+            setStroke(dp(1), if (accent) 0x5599F6E4 else 0x33FFFFFF)
+        }
+        if (icon != null) {
+            addView(android.widget.ImageView(context).apply { setImageDrawable(icon) }, LinearLayout.LayoutParams(dp(ICON_DP), dp(ICON_DP)))
+        } else {
+            addView(TextView(context).apply {
+                text = symbol ?: name.take(1).uppercase()
+                textSize = 30f
+                setTextColor(Color.WHITE)
+                typeface = Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+                background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(discColor(name)) }
+            }, LinearLayout.LayoutParams(dp(ICON_DP), dp(ICON_DP)))
+        }
+        addView(TextView(context).apply {
+            text = name
+            textSize = 18f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            setPadding(dp(6), dp(10), dp(6), 0)
+        })
         isClickable = true
         setOnClickListener { onClick() }
     }
@@ -168,8 +200,14 @@ class CarHomePresentation(
     private fun gap(top: Int) = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         .apply { topMargin = dp(top) }
 
-    private companion object {
-        const val TILES_PER_ROW = 3
+    companion object {
+        const val TILES_PER_ROW = 4
+        private const val ICON_DP = 64
+        private const val GEARHEAD = "com.google.android.projection.gearhead"
+        private val DISCS = intArrayOf(0xFF2563EB.toInt(), 0xFF7C3AED.toInt(), 0xFFDB2777.toInt(), 0xFFEA580C.toInt(), 0xFF059669.toInt(), 0xFF0891B2.toInt())
+
+        /** The same name always gets the same colour. */
+        fun discColor(name: String): Int = DISCS[Math.floorMod(name.hashCode(), DISCS.size)]
     }
 
     private fun dp(v: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), context.resources.displayMetrics).toInt()
