@@ -24,13 +24,15 @@ import dev.caraalink.settings.AppSettings
 /**
  * The car's home screen, shown whenever Android Auto isn't: the time, the
  * speed, the weather if asked for, music buttons, and the things to open
- * from here -- Android Auto, the phone's apps, and the phone's own screen.
+ * from here -- Android Auto, web apps such as YouTube and Claude, the phone's
+ * apps, and the phone's own screen.
  */
 class CarHomePresentation(
     context: Context,
     display: Display,
     private val onOpenAa: () -> Unit,
     private val onOpenApps: () -> Unit,
+    private val onOpenWeb: (url: String) -> Unit,
     private val onOpenMirror: () -> Unit,
 ) : Presentation(context, display) {
 
@@ -57,21 +59,37 @@ class CarHomePresentation(
         val left = column(Gravity.CENTER_VERTICAL or Gravity.START)
         left.addView(clock("h:mm", "HH:mm", 84f, CarWidgets.TEXT, bold = true))
         left.addView(clock("EEEE, d MMMM", "EEEE, d MMMM", 22f, CarWidgets.MUTED))
-        weather = label("", 22f, CarWidgets.ACCENT).also { left.addView(it, gap(12)) }
+        val speedRow = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.BOTTOM }
+        speed = label("", 44f, CarWidgets.TEXT, bold = true).also { speedRow.addView(it, gap(0)) }
+        speedRow.addView(label(" " + context.getString(R.string.car_kmh), 20f, CarWidgets.MUTED), gap(0))
+        weather = label("", 22f, CarWidgets.ACCENT).also { speedRow.addView(it, gap(0).apply { marginStart = dp(24) }) }
+        left.addView(speedRow, gap(14))
+        left.addView(mediaRow().apply { gravity = Gravity.START }, gap(18))
 
-        val middle = column(Gravity.CENTER)
-        speed = label("", 96f, CarWidgets.TEXT, bold = true).also { it.gravity = Gravity.CENTER; middle.addView(it) }
-        middle.addView(label(context.getString(R.string.car_kmh), 20f, CarWidgets.MUTED).apply { gravity = Gravity.CENTER })
-        middle.addView(mediaRow(), gap(20))
-
+        // What can be opened from here, most used first. Tiles for things that aren't set are left out.
+        val tiles = buildList {
+            add(tile(context.getString(R.string.car_open_aa), CarWidgets.BRAND, onOpenAa))
+            add(tile("YouTube", CarWidgets.SURFACE) { onOpenWeb(CarWebPresentation.YOUTUBE) })
+            add(tile("Claude", CarWidgets.SURFACE) { onOpenWeb(CarWebPresentation.CLAUDE) })
+            CarWebPresentation.normalizeUrl(AppSettings.carWebPage(context))?.let { page ->
+                add(tile(context.getString(R.string.car_web), CarWidgets.SURFACE) { onOpenWeb(page) })
+            }
+            add(tile(context.getString(R.string.car_apps), CarWidgets.SURFACE, onOpenApps))
+            add(tile(context.getString(R.string.car_phone_screen), CarWidgets.SURFACE, onOpenMirror))
+        }
         val right = column(Gravity.CENTER)
-        right.addView(tile(R.string.car_open_aa, CarWidgets.BRAND, onOpenAa), tileParams())
-        right.addView(tile(R.string.car_apps, CarWidgets.SURFACE, onOpenApps), tileParams())
-        right.addView(tile(R.string.car_phone_screen, CarWidgets.SURFACE, onOpenMirror), tileParams())
+        for (rowTiles in tiles.chunked(TILES_PER_ROW)) {
+            val row = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+            for (t in rowTiles) row.addView(t, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply {
+                marginStart = dp(8); marginEnd = dp(8)
+            })
+            // A short last row keeps its tiles the same width as the others.
+            repeat(TILES_PER_ROW - rowTiles.size) { row.addView(android.view.View(context), LinearLayout.LayoutParams(0, 1, 1f).apply { marginStart = dp(8); marginEnd = dp(8) }) }
+            right.addView(row, tileParams())
+        }
 
-        root.addView(left, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.2f))
-        root.addView(middle, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
-        root.addView(right, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
+        root.addView(left, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
+        root.addView(right, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.7f))
         setContentView(root)
     }
 
@@ -115,9 +133,9 @@ class CarHomePresentation(
         audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, code))
     }
 
-    private fun tile(text: Int, color: Int, onClick: () -> Unit) = TextView(context).apply {
-        setText(text)
-        textSize = 24f
+    private fun tile(text: String, color: Int, onClick: () -> Unit) = TextView(context).apply {
+        this.text = text
+        textSize = 22f
         setTextColor(Color.WHITE)
         typeface = Typeface.DEFAULT_BOLD
         gravity = Gravity.CENTER
@@ -149,6 +167,10 @@ class CarHomePresentation(
 
     private fun gap(top: Int) = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         .apply { topMargin = dp(top) }
+
+    private companion object {
+        const val TILES_PER_ROW = 3
+    }
 
     private fun dp(v: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), context.resources.displayMetrics).toInt()
 }

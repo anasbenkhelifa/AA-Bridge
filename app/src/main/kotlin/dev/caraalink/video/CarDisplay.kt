@@ -23,7 +23,7 @@ class CarDisplay(
     private val onOpenAa: () -> Unit,
     private val onLeaveAa: () -> Unit = {},
 ) {
-    enum class Mode { STATUS, AA, MIRROR, APPS, APP }
+    enum class Mode { STATUS, AA, MIRROR, APPS, APP, WEB }
 
     private val main = Handler(Looper.getMainLooper())
     private val logger = DiagnosticLogger(context, "car-display")
@@ -101,6 +101,20 @@ class CarDisplay(
         showCurrent()
     }
 
+    /** A web page, opened from the car home screen. */
+    private fun showWeb(url: String) = main.post {
+        screen = CarScreen.CLOSED
+        webUrl = url
+        mode = Mode.WEB
+        showCurrent()
+    }
+
+    /** The car's Back button on a web page: back a page, or home when there is none. */
+    fun webBack() = main.post {
+        if ((presentation as? CarWebPresentation)?.goBack() != true) showStatus(CarScreen.CLOSED)
+    }
+
+    private var webUrl: String? = null
     private var appComponent: String? = null
     private var aaVideoSize: Pair<Int, Int>? = null
     private var aaMargin: Pair<Int, Int> = 0 to 0
@@ -115,11 +129,12 @@ class CarDisplay(
                 mode == Mode.AA && aaVideoSize != null -> aaPresentation(display)
                 mode == Mode.MIRROR -> MirrorCarPresentation(context, display)
                 mode == Mode.APPS -> CarAppsPresentation(context, display, ::showApp)
+                mode == Mode.WEB && webUrl != null -> CarWebPresentation(context, display, webUrl!!)
                 mode == Mode.APP && appComponent != null -> CarAppPresentation(context, display, appComponent!!)
                 else -> {
                     mode = Mode.STATUS
                     // Closed is nothing going wrong, so it gets the home screen; the rest are messages.
-                    if (screen == CarScreen.CLOSED) CarHomePresentation(context, display, onOpenAa, ::showApps, ::showMirror)
+                    if (screen == CarScreen.CLOSED) CarHomePresentation(context, display, onOpenAa, ::showApps, ::showWeb, ::showMirror)
                     else CarStatusPresentation(context, display, screen, onOpenAa)
                 }
             }.also { it.show() }

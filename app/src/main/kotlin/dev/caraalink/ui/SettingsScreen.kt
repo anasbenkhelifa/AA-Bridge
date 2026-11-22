@@ -87,6 +87,8 @@ fun SettingsScreen(onBack: () -> Unit, onHelp: () -> Unit, onAbout: () -> Unit, 
         DashGroup {
             SharperPictureRow()
             SettingsRow(painterResource(R.drawable.ic_touch_app), stringResource(R.string.settings_car_buttons), onCarButtons)
+            WebSignInRow(R.string.settings_signin_youtube, dev.caraalink.video.CarWebPresentation.YOUTUBE)
+            WebSignInRow(R.string.settings_signin_claude, dev.caraalink.video.CarWebPresentation.CLAUDE)
             CarAppsRow()
         }
         DashGroup {
@@ -200,6 +202,21 @@ private fun SharperPictureRow() {
         leadingContent = { Icon(painterResource(R.drawable.ic_devices), contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
         trailingContent = { Switch(checked = sharp, onCheckedChange = set) },
         modifier = Modifier.clickable { set(!sharp) },
+    )
+}
+
+/** Opens a site in the car's browser, on the phone, to sign in with a real keyboard. */
+@Composable
+private fun WebSignInRow(label: Int, url: String) {
+    val context = LocalContext.current
+    ListItem(
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        headlineContent = { Text(stringResource(label), style = MaterialTheme.typography.bodyLarge) },
+        supportingContent = { Text(stringResource(R.string.settings_signin_body)) },
+        leadingContent = { Icon(painterResource(R.drawable.ic_devices), contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+        modifier = Modifier.clickable {
+            context.startActivity(Intent(context, WebSignInActivity::class.java).putExtra(WebSignInActivity.EXTRA_URL, url))
+        },
     )
 }
 

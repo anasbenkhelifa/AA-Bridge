@@ -119,14 +119,23 @@
 
     <PreferenceCategory android:title="Car home screen and phone screen">
         <SwitchPreferenceCompat
+            android:key="start_on_home"
+            android:title="Open on the car home screen"
+            android:summary="When the car connects, show the home screen with its tiles. Off opens Android Auto straight away."
+            android:defaultValue="true" />
+        <EditTextPreference
+            android:key="car_web_page"
+            android:title="Extra web page"
+            android:summary="Adds a Web tile to the car home screen for this address, next to YouTube and Claude. Leave empty for none." />
+        <SwitchPreferenceCompat
             android:key="car_weather"
             android:title="Weather on the car home screen"
             android:summary="Shows the outside temperature. To get it, your position, rounded to about a kilometre, is sent to open-meteo.com every half hour."
             android:defaultValue="false" />
         <SwitchPreferenceCompat
             android:key="mirror_hide_moving"
-            android:title="Hide the phone screen while moving"
-            android:summary="When you show the phone's screen on the car, the picture is covered unless GPS shows the car stopped. Turn off only for passengers: the screen is in the driver's view, and video in sight of the driver is illegal in many places."
+            android:title="Hide web pages and the phone screen while moving"
+            android:summary="Web pages and the phone's screen on the car are covered unless GPS shows the car stopped; sound keeps playing. Turn off only for passengers: the screen is in the driver's view, and video in sight of the driver is illegal in many places."
             android:defaultValue="true" />
     </PreferenceCategory>
 

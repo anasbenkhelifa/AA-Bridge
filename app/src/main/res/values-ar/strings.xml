@@ -140,4 +140,9 @@
     <string name="apps_need_install">يحتاج إلى تطبيق Shizuku المجاني. اضغط للحصول عليه.</string>
     <string name="apps_need_start">تطبيق Shizuku لا يعمل. اضغط لفتحه وتشغيله؛ يجب تشغيله من جديد بعد إعادة تشغيل الهاتف.</string>
     <string name="apps_need_allow">اضغط للسماح لـ AA Bridge باستخدام Shizuku.</string>
+    <string name="car_web">الويب</string>
+    <string name="web_moving">الصورة مخفية أثناء سير السيارة. الصوت يستمر.</string>
+    <string name="settings_signin_youtube">YouTube على شاشة السيارة</string>
+    <string name="settings_signin_claude">Claude على شاشة السيارة</string>
+    <string name="settings_signin_body">يفتحه هنا لتسجيل الدخول بلوحة مفاتيح الهاتف. تبقى شاشة السيارة مسجّلة الدخول بعدها.</string>
 </resources>

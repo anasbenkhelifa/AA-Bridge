@@ -437,7 +437,13 @@ class CarSession(
         // First point the car display exists; once per session, since every CONFIG_CAPTURE lands here.
         if (!autoLaunchedAa) {
             autoLaunchedAa = true
-            openAndroidAuto()
+            // The car home screen first, with Android Auto one tap away on it; or straight into Android Auto.
+            // A session handed over from a wireless link is already running, so that one is shown either way.
+            if (dev.caraalink.settings.AppSettings.startOnHome(context) && dev.caraalink.aa.AaSessionProbe.active == null) {
+                display.showStatus(CarScreen.CLOSED)
+            } else {
+                openAndroidAuto()
+            }
         }
     }
 
@@ -475,6 +481,14 @@ class CarSession(
         logger.log("car key $key -> $action")
         dev.caraalink.settings.CarKeys.report(key)
         val mode = display.mode
+        if (mode == CarDisplay.Mode.WEB) {
+            when (action) {
+                dev.caraalink.settings.CarKeyAction.BACK -> display.webBack()
+                dev.caraalink.settings.CarKeyAction.CLOSE_AA, dev.caraalink.settings.CarKeyAction.HOME -> display.showStatus(CarScreen.CLOSED)
+                else -> {}
+            }
+            return
+        }
         if (mode == CarDisplay.Mode.MIRROR || mode == CarDisplay.Mode.APPS || mode == CarDisplay.Mode.APP) {
             // Outside Android Auto, Back belongs to the app on screen; anything set to close goes to the car home screen.
             when (action) {
