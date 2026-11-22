@@ -15,6 +15,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.TextClock
 import android.widget.TextView
 import dev.caraalink.R
 
@@ -43,7 +44,14 @@ class CarStatusPresentation(
         }
         // Amber when the driver has to act, as on the phone.
         val needsDriver = screen == CarScreen.WAITING || screen == CarScreen.NOT_RESPONDING
-        column.addView(text(title, 30f, if (needsDriver) AMBER else TEXT, bold = true))
+        if (screen == CarScreen.CLOSED) {
+            // Nothing is wrong and nothing is loading, so the screen does a job while it waits: a clock.
+            column.addView(clock(TIME_12, TIME_24, 88f, TEXT, bold = true), spaced(top = 0))
+            column.addView(clock(DATE, DATE, 22f, MUTED), spaced(top = dp(4)))
+            column.addView(text(title, 18f, MUTED), spaced(top = dp(28)))
+        } else {
+            column.addView(text(title, 30f, if (needsDriver) AMBER else TEXT, bold = true))
+        }
         when (screen) {
             CarScreen.WAITING -> {
                 column.addView(text(R.string.car_waiting_body, 18f, MUTED))
@@ -72,6 +80,16 @@ class CarStatusPresentation(
         gravity = Gravity.CENTER
         if (bold) typeface = Typeface.DEFAULT_BOLD
         layoutParams = spaced()
+    }
+
+    /** The time or date, kept current by the system; follows the phone's 12 or 24 hour setting. */
+    private fun clock(format12: String, format24: String, size: Float, color: Int, bold: Boolean = false) = TextClock(context).apply {
+        format12Hour = format12
+        format24Hour = format24
+        textSize = size
+        setTextColor(color)
+        gravity = Gravity.CENTER
+        if (bold) typeface = Typeface.DEFAULT_BOLD
     }
 
     /** The ⋮ button followed by the menu item(s) to tap, highlighted. */
@@ -121,6 +139,10 @@ class CarStatusPresentation(
     ).toInt()
 
     private companion object {
+        const val TIME_12 = "h:mm"
+        const val TIME_24 = "HH:mm"
+        const val DATE = "EEEE, d MMMM"
+
         // The phone's O21 dashboard palette (ui/theme/Theme.kt Dash).
         val BACKGROUND = Color.parseColor("#0A0E12")
         val SURFACE = Color.parseColor("#121A20")
