@@ -180,6 +180,10 @@ object AppSettings {
     fun parkedDetection(context: Context): Boolean =
         prefs(context).getBoolean("aa_parked_detection", true)
 
+    /** Keep the per-car settings (CarProfiles) separately for each head unit and bring them back when it connects. */
+    fun rememberPerCar(context: Context): Boolean =
+        prefs(context).getBoolean("car_memory", true)
+
     fun updateAutoCheck(context: Context): Boolean =
         prefs(context).getBoolean("update_auto_check", true)
 }

@@ -67,6 +67,11 @@
             android:title="Car profiles"
             android:summary="Save/load video and AA settings per car (screen shape, resolution, fill mode, etc.)" />
         <SwitchPreferenceCompat
+            android:key="car_memory"
+            android:title="Remember settings per car"
+            android:summary="Screen, video and car button settings are kept for each car and come back when that car connects. Changes you make belong to the car you connected to last."
+            android:defaultValue="true" />
+        <SwitchPreferenceCompat
             android:key="video_downscale_720p"
             android:title="Downscale resolution"
             android:summary="Send AA a 720p frame instead of 1080p -- fewer pixels for the same adaptive bitrate to cover, less blocky. Separate from Custom resolution below."

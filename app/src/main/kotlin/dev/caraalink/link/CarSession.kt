@@ -133,6 +133,12 @@ class CarSession(
             val attached = if (it.phase == ConnectionPhase.DISCONNECTED || it.phase == ConnectionPhase.ERROR) ConnectionPhase.ATTACHED else it.phase
             it.copy(carName = info.optString("carBrand").ifBlank { null }, phase = attached, lastError = null)
         }
+        val carId = dev.caraalink.settings.CarProfiles.carId(info.optString("HUID"), info.optString("HUName")) ?: return
+        // The car names itself before it asks for video, so its settings are usually back before Android Auto
+        // starts. A session that is already up (a wireless one handed to the cable) restarts to pick them up.
+        if (dev.caraalink.settings.CarProfiles.onCarConnected(context, carId)) {
+            main.post { dev.caraalink.aa.AaReconnectBus.onVideoSettingsChanged?.invoke() }
+        }
     }
 
     // --- car home screen actions ---
