@@ -23,7 +23,7 @@ class AaTlsChannel(
     private val input: DataInputStream,
     private val output: OutputStream,
     private val logger: DiagnosticLogger,
-) {
+) : AaLink {
 
     data class Message(
         val channelId: Int,
@@ -37,7 +37,7 @@ class AaTlsChannel(
     private val netOut = ByteBuffer.allocate(engine.session.packetBufferSize)
 
     /** Sends an ENCRYPTED control-channel message: payload is TLS-wrapped. */
-    fun sendControlEncrypted(messageId: Int, body: ByteArray) =
+    override fun sendControlEncrypted(messageId: Int, body: ByteArray) =
         sendEncrypted(AaFraming.CHANNEL_CONTROL, AaFraming.MESSAGE_SPECIFIC, messageId, body)
 
     /**
@@ -48,7 +48,7 @@ class AaTlsChannel(
      * `SensorSourceService::sendChannelOpenResponse()`: ENCRYPTED, channel =
      * the service's own id, `MessageType::CONTROL`, msg id 8.
      */
-    fun sendChannelControl(channelId: Int, messageId: Int, body: ByteArray) =
+    override fun sendChannelControl(channelId: Int, messageId: Int, body: ByteArray) =
         sendEncrypted(channelId, AaFraming.MESSAGE_CONTROL, messageId, body)
 
     /**
@@ -58,7 +58,7 @@ class AaTlsChannel(
      * `VideoMediaSinkService::sendChannelSetupResponse()`,
      * `SensorSourceService::sendSensorStartResponse()`).
      */
-    fun sendChannelSpecific(channelId: Int, messageId: Int, body: ByteArray) =
+    override fun sendChannelSpecific(channelId: Int, messageId: Int, body: ByteArray) =
         sendEncrypted(channelId, AaFraming.MESSAGE_SPECIFIC, messageId, body)
 
     @Synchronized
