@@ -20,4 +20,13 @@ class CarSessionWatchdogTest {
         assertTrue(CarSession.lostServer(connectionActive = false, inactiveForMs = 30_000))
         assertFalse(CarSession.lostServer(connectionActive = true, inactiveForMs = 60_000))
     }
+
+    @Test
+    fun theSameKeyStraightAfterItselfIsOnePress() {
+        assertTrue(CarSession.isKeyRepeat(key = 1044, lastKey = 1044, sinceLastMs = 120))
+        // A second press a moment later, another button, and the very first press all count.
+        assertFalse(CarSession.isKeyRepeat(key = 1044, lastKey = 1044, sinceLastMs = 300))
+        assertFalse(CarSession.isKeyRepeat(key = 1042, lastKey = 1044, sinceLastMs = 10))
+        assertFalse(CarSession.isKeyRepeat(key = 1044, lastKey = -1, sinceLastMs = 5_000_000))
+    }
 }

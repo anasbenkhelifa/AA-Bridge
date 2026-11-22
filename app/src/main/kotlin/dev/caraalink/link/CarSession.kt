@@ -135,9 +135,14 @@ class CarSession(
         }
         val carId = dev.caraalink.settings.CarProfiles.carId(info.optString("HUID"), info.optString("HUName")) ?: return
         // The car names itself before it asks for video, so its settings are usually back before Android Auto
-        // starts. A session that is already up (a wireless one handed to the cable) restarts to pick them up.
+        // starts. A session that is already up was negotiated with the other car's settings and has to go:
+        // one on this car's screen restarts through the bus, one handed over from a wireless link (not on
+        // screen yet, so the bus is empty) is stopped here and opened afresh when the car asks for video.
         if (dev.caraalink.settings.CarProfiles.onCarConnected(context, carId)) {
-            main.post { dev.caraalink.aa.AaReconnectBus.onVideoSettingsChanged?.invoke() }
+            main.post {
+                val restart = dev.caraalink.aa.AaReconnectBus.onVideoSettingsChanged
+                if (restart != null) restart() else dev.caraalink.aa.AaSessionProbe.active?.stop()
+            }
         }
     }
 
@@ -343,6 +348,9 @@ class CarSession(
         // a full reconnect, so arm the bus SettingsActivity signals through.
         dev.caraalink.aa.AaReconnectBus.onVideoSettingsChanged = {
             logger.log("AA video settings changed -- reconnecting session")
+            // Between this stop and the reopen there is no probe; a watchdog tick landing there would take that
+            // for Android Auto's own exit, show Closed, and block the reopen. showAaSurface() starts it again.
+            aaWatchdog.removeCallbacks(aaWatchdogTick)
             dev.caraalink.aa.AaSessionProbe.active?.stop()
             // A warm restart needs a moment for gearhead to tear down the old session.
             aaWatchdog.postDelayed({ if (mayAutoOpenAa(released, display.screen)) openAndroidAuto() }, 1500)
@@ -449,7 +457,20 @@ class CarSession(
         display.touch(action, fx, fy)
     }
 
+    private var lastKey = -1
+    private var lastKeyAt = 0L
+
     override fun onKey(key: Int) {
+        // The car's key event has no press or release in it. If a head unit sends one for each, a button
+        // would act twice, so the same key again within a moment is the same press. The log shows which it is.
+        val now = android.os.SystemClock.uptimeMillis()
+        val repeat = isKeyRepeat(key, lastKey, now - lastKeyAt)
+        lastKey = key
+        lastKeyAt = now
+        if (repeat) {
+            logger.log("car key $key again within ${KEY_REPEAT_MS}ms -- same press, ignored")
+            return
+        }
         val action = dev.caraalink.settings.CarKeys.actionFor(context, key)
         logger.log("car key $key -> $action")
         dev.caraalink.settings.CarKeys.report(key)
@@ -585,6 +606,11 @@ class CarSession(
         private const val NOT_RESPONDING_RETRY_MS = 5_000L
 
         private const val LOST_SERVER_MS = 30_000L
+        private const val KEY_REPEAT_MS = 300L
+
+        /** The same key so soon after itself is one press reported twice, not two presses. */
+        internal fun isKeyRepeat(key: Int, lastKey: Int, sinceLastMs: Long): Boolean =
+            key == lastKey && sinceLastMs in 0 until KEY_REPEAT_MS
 
         /** Automatic reopens (restarts, retries, polls) must not undo an unplug or a deliberate exit. */
         internal fun mayAutoOpenAa(released: Boolean, screen: CarScreen): Boolean =

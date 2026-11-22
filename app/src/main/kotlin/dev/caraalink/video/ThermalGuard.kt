@@ -55,7 +55,10 @@ object ThermalGuard {
         limited = false
     }
 
+    @Synchronized
     private fun onStatus(context: Context, newStatus: Int, onLimited: () -> Unit) {
+        // A status that was already on its way when the link ended must not cap the next drive.
+        if (listener == null) return
         val logger = DiagnosticLogger(context, "thermal")
         if (newStatus != status) logger.log("thermal status $status -> $newStatus")
         status = newStatus
@@ -68,7 +71,9 @@ object ThermalGuard {
             return
         }
         logger.log("severe heat -- lowering video for this drive: ${AaServiceDiscovery.describe(before)} -> ${AaServiceDiscovery.describe(after)}")
-        AaReconnectBus.onVideoSettingsChanged?.invoke()
+        // With no session on the car screen yet, the next one simply starts lower and there is nothing to announce.
+        val restart = AaReconnectBus.onVideoSettingsChanged ?: return
+        restart()
         onLimited()
     }
 }
