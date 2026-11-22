@@ -1,14 +1,11 @@
 package dev.caraalink.mirror
 
-import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.GestureDescription
 import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.graphics.Path
 import android.graphics.Point
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
@@ -20,7 +17,6 @@ import android.os.Looper
 import android.os.PowerManager
 import android.view.Display
 import android.view.Surface
-import android.view.accessibility.AccessibilityEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.NotificationCompat
@@ -34,8 +30,8 @@ import dev.caraalink.service.UsbLinkForegroundService
  * app, a chat) can reach the car one way: capture the phone's screen with
  * MediaProjection and draw that. The phone has to stay on and show the app.
  *
- * Touch goes back through [MirrorTouchService], an accessibility service the
- * driver turns on once; without it the picture still shows.
+ * Touch goes back through the Shizuku helper (dev.caraalink.shell) when the
+ * driver has set that up; without it the picture still shows.
  */
 object PhoneMirror {
     private const val MAX_SIDE = 1280
@@ -218,45 +214,5 @@ class MirrorConsentActivity : ComponentActivity() {
         if (savedInstanceState == null) {
             ask.launch(getSystemService(MediaProjectionManager::class.java).createScreenCaptureIntent())
         }
-    }
-}
-
-/**
- * Plays the car's touches on the phone. Dispatching a gesture is the only way
- * an ordinary app can touch another app, and Android reserves it for
- * accessibility services. It reads nothing from the screen.
- */
-class MirrorTouchService : AccessibilityService() {
-
-    override fun onServiceConnected() {
-        instance = this
-    }
-
-    override fun onUnbind(intent: Intent?): Boolean {
-        if (instance === this) instance = null
-        return super.onUnbind(intent)
-    }
-
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
-    override fun onInterrupt() {}
-
-    companion object {
-        @Volatile
-        var instance: MirrorTouchService? = null
-            private set
-
-        /** One finger's path in phone pixels, played over [durationMs]. False when the service is off. */
-        fun play(points: List<Pair<Float, Float>>, durationMs: Long): Boolean {
-            val service = instance ?: return false
-            if (points.isEmpty()) return false
-            val path = Path().apply {
-                moveTo(points[0].first, points[0].second)
-                for (i in 1 until points.size) lineTo(points[i].first, points[i].second)
-            }
-            val stroke = GestureDescription.StrokeDescription(path, 0, durationMs.coerceIn(1, 5_000))
-            return service.dispatchGesture(GestureDescription.Builder().addStroke(stroke).build(), null, null)
-        }
-
-        fun back(): Boolean = instance?.performGlobalAction(GLOBAL_ACTION_BACK) ?: false
     }
 }

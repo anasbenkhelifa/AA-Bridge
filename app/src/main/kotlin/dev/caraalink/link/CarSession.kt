@@ -474,10 +474,15 @@ class CarSession(
         val action = dev.caraalink.settings.CarKeys.actionFor(context, key)
         logger.log("car key $key -> $action")
         dev.caraalink.settings.CarKeys.report(key)
-        if (display.mode == CarDisplay.Mode.MIRROR) {
-            // On the phone's screen Back is the phone's Back; anything set to close goes to the car home screen.
+        val mode = display.mode
+        if (mode == CarDisplay.Mode.MIRROR || mode == CarDisplay.Mode.APPS || mode == CarDisplay.Mode.APP) {
+            // Outside Android Auto, Back belongs to the app on screen; anything set to close goes to the car home screen.
             when (action) {
-                dev.caraalink.settings.CarKeyAction.BACK -> dev.caraalink.mirror.MirrorTouchService.back()
+                dev.caraalink.settings.CarKeyAction.BACK -> {
+                    val target = if (mode == CarDisplay.Mode.APP) dev.caraalink.video.CarAppPresentation.displayId else 0
+                    if (mode == CarDisplay.Mode.APPS) display.showStatus(CarScreen.CLOSED)
+                    else if (target >= 0) runCatching { dev.caraalink.shell.ShellBridge.service?.key(target, android.view.KeyEvent.KEYCODE_BACK) }
+                }
                 dev.caraalink.settings.CarKeyAction.CLOSE_AA, dev.caraalink.settings.CarKeyAction.HOME -> display.showStatus(CarScreen.CLOSED)
                 else -> {}
             }

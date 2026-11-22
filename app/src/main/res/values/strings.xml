@@ -139,5 +139,10 @@
     <string name="mirror_notif_text">Tap, then allow screen sharing.</string>
     <string name="mirror_allow_on_phone">On your phone, tap the AA Bridge notification and allow screen sharing.</string>
     <string name="mirror_moving">The phone screen is hidden while the car is moving.</string>
-    <string name="mirror_touch_description">Lets taps and swipes on the car screen reach your phone while its screen is shown there. AA Bridge reads nothing from your screen.</string>
+    <string name="car_apps">Apps</string>
+    <string name="settings_car_apps">Apps on the car screen</string>
+    <string name="apps_ready">Ready. Open Apps from the car\'s home screen.</string>
+    <string name="apps_need_install">Needs the free Shizuku app. Tap to get it.</string>
+    <string name="apps_need_start">Shizuku isn\'t running. Tap to open it and start it; it has to be started again after the phone restarts.</string>
+    <string name="apps_need_allow">Tap to let AA Bridge use Shizuku.</string>
 </resources>

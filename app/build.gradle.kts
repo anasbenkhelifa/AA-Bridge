@@ -30,6 +30,7 @@ android {
 
     buildFeatures {
         buildConfig = true
+        aidl = true
         compose = true
     }
 
@@ -86,6 +87,10 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.activity:activity-compose:1.9.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
+
+    // Apps on the car screen without mirroring: adb's rights, granted by the user through the Shizuku app.
+    implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.11.0")

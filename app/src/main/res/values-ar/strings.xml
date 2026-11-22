@@ -134,5 +134,10 @@
     <string name="mirror_notif_text">اضغط هنا، ثم اسمح بمشاركة الشاشة.</string>
     <string name="mirror_allow_on_phone">على هاتفك، اضغط على إشعار AA Bridge واسمح بمشاركة الشاشة.</string>
     <string name="mirror_moving">شاشة الهاتف مخفية أثناء سير السيارة.</string>
-    <string name="mirror_touch_description">يسمح بوصول اللمس على شاشة السيارة إلى هاتفك أثناء عرض شاشته عليها. لا يقرأ AA Bridge أي شيء من شاشتك.</string>
+    <string name="car_apps">التطبيقات</string>
+    <string name="settings_car_apps">التطبيقات على شاشة السيارة</string>
+    <string name="apps_ready">جاهز. افتح «التطبيقات» من الشاشة الرئيسية في السيارة.</string>
+    <string name="apps_need_install">يحتاج إلى تطبيق Shizuku المجاني. اضغط للحصول عليه.</string>
+    <string name="apps_need_start">تطبيق Shizuku لا يعمل. اضغط لفتحه وتشغيله؛ يجب تشغيله من جديد بعد إعادة تشغيل الهاتف.</string>
+    <string name="apps_need_allow">اضغط للسماح لـ AA Bridge باستخدام Shizuku.</string>
 </resources>

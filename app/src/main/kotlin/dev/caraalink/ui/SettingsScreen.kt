@@ -55,6 +55,12 @@ import androidx.compose.ui.unit.dp
 import dev.caraalink.R
 import dev.caraalink.settings.SettingsActivity
 import dev.caraalink.update.UpdateChecker
+import dev.caraalink.shell.ShellBridge
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
 import dev.caraalink.wireless.CarBluetooth
 import dev.caraalink.wireless.RememberedCar
 
@@ -81,6 +87,7 @@ fun SettingsScreen(onBack: () -> Unit, onHelp: () -> Unit, onAbout: () -> Unit, 
         DashGroup {
             SharperPictureRow()
             SettingsRow(painterResource(R.drawable.ic_touch_app), stringResource(R.string.settings_car_buttons), onCarButtons)
+            CarAppsRow()
         }
         DashGroup {
             SettingsRow(rememberVectorPainter(Icons.Rounded.Refresh), stringResource(R.string.settings_updates)) {
@@ -193,6 +200,42 @@ private fun SharperPictureRow() {
         leadingContent = { Icon(painterResource(R.drawable.ic_devices), contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
         trailingContent = { Switch(checked = sharp, onCheckedChange = set) },
         modifier = Modifier.clickable { set(!sharp) },
+    )
+}
+
+/** Apps on the car screen need Shizuku: says what is missing, and a tap does the next step. */
+@Composable
+private fun CarAppsRow() {
+    val context = LocalContext.current
+    var state by remember { mutableStateOf(ShellBridge.state(context)) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(lifecycle) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                state = ShellBridge.state(context)
+                if (state == ShellBridge.State.READY) ShellBridge.connect(context)
+                delay(1_500)
+            }
+        }
+    }
+    val (summary, action) = when (state) {
+        ShellBridge.State.READY -> R.string.apps_ready to {}
+        ShellBridge.State.NEEDS_PERMISSION -> R.string.apps_need_allow to { ShellBridge.requestPermission() }
+        ShellBridge.State.NOT_RUNNING -> R.string.apps_need_start to {
+            context.packageManager.getLaunchIntentForPackage(ShellBridge.SHIZUKU_PACKAGE)?.let { context.startActivity(it) }
+            Unit
+        }
+        ShellBridge.State.NOT_INSTALLED -> R.string.apps_need_install to {
+            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://shizuku.rikka.app/download/"))) }
+            Unit
+        }
+    }
+    ListItem(
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        headlineContent = { Text(stringResource(R.string.settings_car_apps), style = MaterialTheme.typography.bodyLarge) },
+        supportingContent = { Text(stringResource(summary)) },
+        leadingContent = { Icon(painterResource(R.drawable.ic_devices), contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+        modifier = Modifier.clickable(onClick = action),
     )
 }
 

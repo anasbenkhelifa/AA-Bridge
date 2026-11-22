@@ -23,13 +23,14 @@ import dev.caraalink.settings.AppSettings
 
 /**
  * The car's home screen, shown whenever Android Auto isn't: the time, the
- * speed, the weather if asked for, music buttons, and the two things to open
- * from here -- Android Auto and the phone's own screen.
+ * speed, the weather if asked for, music buttons, and the things to open
+ * from here -- Android Auto, the phone's apps, and the phone's own screen.
  */
 class CarHomePresentation(
     context: Context,
     display: Display,
     private val onOpenAa: () -> Unit,
+    private val onOpenApps: () -> Unit,
     private val onOpenMirror: () -> Unit,
 ) : Presentation(context, display) {
 
@@ -65,6 +66,7 @@ class CarHomePresentation(
 
         val right = column(Gravity.CENTER)
         right.addView(tile(R.string.car_open_aa, CarWidgets.BRAND, onOpenAa), tileParams())
+        right.addView(tile(R.string.car_apps, CarWidgets.SURFACE, onOpenApps), tileParams())
         right.addView(tile(R.string.car_phone_screen, CarWidgets.SURFACE, onOpenMirror), tileParams())
 
         root.addView(left, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.2f))
@@ -76,6 +78,7 @@ class CarHomePresentation(
     override fun onStart() {
         super.onStart()
         if (AppSettings.carWeather(context)) Weather.refresh(context)
+        dev.caraalink.shell.ShellBridge.connect(context)
         tick.run()
     }
 

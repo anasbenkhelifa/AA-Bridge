@@ -23,7 +23,7 @@ class CarDisplay(
     private val onOpenAa: () -> Unit,
     private val onLeaveAa: () -> Unit = {},
 ) {
-    enum class Mode { STATUS, AA, MIRROR }
+    enum class Mode { STATUS, AA, MIRROR, APPS, APP }
 
     private val main = Handler(Looper.getMainLooper())
     private val logger = DiagnosticLogger(context, "car-display")
@@ -87,6 +87,21 @@ class CarDisplay(
         showCurrent()
     }
 
+    /** The grid of the phone's apps, opened from the car home screen. */
+    fun showApps() = main.post {
+        screen = CarScreen.CLOSED
+        mode = Mode.APPS
+        showCurrent()
+    }
+
+    /** One app ("package/class") on a screen of its own. */
+    private fun showApp(component: String) = main.post {
+        appComponent = component
+        mode = Mode.APP
+        showCurrent()
+    }
+
+    private var appComponent: String? = null
     private var aaVideoSize: Pair<Int, Int>? = null
     private var aaMargin: Pair<Int, Int> = 0 to 0
     private var aaOnSurface: ((Surface?) -> Unit)? = null
@@ -99,10 +114,12 @@ class CarDisplay(
             when {
                 mode == Mode.AA && aaVideoSize != null -> aaPresentation(display)
                 mode == Mode.MIRROR -> MirrorCarPresentation(context, display)
+                mode == Mode.APPS -> CarAppsPresentation(context, display, ::showApp)
+                mode == Mode.APP && appComponent != null -> CarAppPresentation(context, display, appComponent!!)
                 else -> {
                     mode = Mode.STATUS
                     // Closed is nothing going wrong, so it gets the home screen; the rest are messages.
-                    if (screen == CarScreen.CLOSED) CarHomePresentation(context, display, onOpenAa, ::showMirror)
+                    if (screen == CarScreen.CLOSED) CarHomePresentation(context, display, onOpenAa, ::showApps, ::showMirror)
                     else CarStatusPresentation(context, display, screen, onOpenAa)
                 }
             }.also { it.show() }

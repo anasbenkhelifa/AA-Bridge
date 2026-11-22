@@ -21,7 +21,6 @@ import android.widget.TextView
 import dev.caraalink.R
 import dev.caraalink.link.CarMotion
 import dev.caraalink.link.Motion
-import dev.caraalink.mirror.MirrorTouchService
 import dev.caraalink.mirror.PhoneMirror
 import dev.caraalink.settings.AppSettings
 
@@ -34,8 +33,7 @@ class MirrorCarPresentation(context: Context, display: Display) : Presentation(c
     private lateinit var cover: TextView
     private var pictureWidth = 0
     private var pictureHeight = 0
-    private val stroke = ArrayList<Pair<Float, Float>>()
-    private var strokeStartedAt = 0L
+    private var downAt = 0L
 
     private val tick = object : Runnable {
         override fun run() {
@@ -79,6 +77,7 @@ class MirrorCarPresentation(context: Context, display: Display) : Presentation(c
     override fun onStart() {
         super.onStart()
         PhoneMirror.onChanged = { refresh() }
+        dev.caraalink.shell.ShellBridge.connect(context)
         if (!PhoneMirror.allowed) PhoneMirror.askForConsent(context)
         tick.run()
     }
@@ -117,24 +116,16 @@ class MirrorCarPresentation(context: Context, display: Display) : Presentation(c
         }
     }
 
-    /** One finger down to up becomes one gesture on the phone, with the same path and duration. */
+    /** The car's touch, placed on the same spot of the phone's own screen. Needs the Shizuku helper; without it the picture is view-only. */
     private fun onPictureTouch(v: View, ev: MotionEvent) {
+        val service = dev.caraalink.shell.ShellBridge.service ?: return
         if (v.width <= 0 || v.height <= 0) return
+        val action = ev.actionMasked
+        if (action != MotionEvent.ACTION_DOWN && action != MotionEvent.ACTION_MOVE && action != MotionEvent.ACTION_UP) return
+        if (action == MotionEvent.ACTION_DOWN) downAt = SystemClock.uptimeMillis()
         val phone = PhoneMirror.phoneSize(context)
-        val point = PhoneMirror.toPhone(ev.x / v.width, ev.y / v.height, phone.x, phone.y)
-        when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                stroke.clear()
-                stroke += point
-                strokeStartedAt = SystemClock.uptimeMillis()
-            }
-            MotionEvent.ACTION_MOVE -> stroke += point
-            MotionEvent.ACTION_UP -> {
-                stroke += point
-                MirrorTouchService.play(ArrayList(stroke), SystemClock.uptimeMillis() - strokeStartedAt)
-                stroke.clear()
-            }
-        }
+        val (x, y) = PhoneMirror.toPhone(ev.x / v.width, ev.y / v.height, phone.x, phone.y)
+        runCatching { service.touch(Display.DEFAULT_DISPLAY, action, x, y, downAt) }
     }
 
     companion object {

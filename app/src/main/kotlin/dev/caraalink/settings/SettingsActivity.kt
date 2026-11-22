@@ -58,10 +58,6 @@ class SettingsActivity : AppCompatActivity() {
                 startActivity(Intent(requireContext(), dev.caraalink.diagnostics.DeveloperToolsActivity::class.java))
                 true
             }
-            findPreference<Preference>("mirror_touch")?.setOnPreferenceClickListener {
-                runCatching { startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
-                true
-            }
             findPreference<Preference>("car_profiles")?.setOnPreferenceClickListener {
                 showCarProfilesDialog()
                 true

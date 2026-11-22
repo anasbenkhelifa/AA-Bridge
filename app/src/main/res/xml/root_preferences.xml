@@ -128,10 +128,6 @@
             android:title="Hide the phone screen while moving"
             android:summary="When you show the phone's screen on the car, the picture is covered unless GPS shows the car stopped. Turn off only for passengers: the screen is in the driver's view, and video in sight of the driver is illegal in many places."
             android:defaultValue="true" />
-        <Preference
-            android:key="mirror_touch"
-            android:title="Touch for the phone screen"
-            android:summary="Opens Accessibility. Turn on AA Bridge there so taps on the car screen reach the phone. It reads nothing from your screen." />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Connection">
