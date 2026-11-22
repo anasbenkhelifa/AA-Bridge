@@ -9,7 +9,8 @@ internal class AaSensorChannel(
     /** Stopped, moving or unknown; null when driving status reporting is switched off. */
     private val motion: () -> Motion?,
     private val log: (String) -> Unit,
-    private val now: () -> Long = System::currentTimeMillis,
+    /** Milliseconds on a clock that never steps backwards, so a time correction can't hold a status change back. */
+    private val now: () -> Long = { System.nanoTime() / 1_000_000 },
 ) : AaChannel(AaServiceDiscovery.CHANNEL_SENSOR) {
 
     private var nightStarted = false

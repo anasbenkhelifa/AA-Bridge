@@ -1,6 +1,7 @@
 package dev.caraalink.link
 
 import android.location.Location
+import android.location.LocationManager
 import android.os.SystemClock
 
 /** Whether the car is stopped, as far as the phone's GPS can tell. */
@@ -11,24 +12,43 @@ enum class Motion { UNKNOWN, PARKED, MOVING }
  * and gear never reach the phone over CarbitLink or QDLink, so speed is all
  * there is.
  *
- * Built to fail towards MOVING: the car counts as parked only after the speed
- * has stayed under [STOP_MPS] for [HOLD_MS], it counts as moving again on the
- * first fix at [MOVE_MPS] or more, and with no fix for [STALE_MS] (a tunnel, a
- * garage, location switched off) nothing is known at all.
+ * Every doubt resolves away from PARKED:
+ * - Parked takes an unbroken run of trusted fixes under [STOP_MPS] lasting
+ *   [HOLD_MS]. One slow fix is never enough, and a gap in the fixes starts
+ *   the run over.
+ * - It ends on the first fix at [MOVE_MPS] or more, however rough that fix
+ *   is, on the second fix in a row between the two speeds, or on a slow fix
+ *   whose own speed error is too large to vouch for standing still.
+ * - With no fix for [STALE_MS] (a tunnel, a garage, location switched off)
+ *   nothing is known at all.
  */
 class ParkDetector {
     private var lastFixAt = NEVER
     private var stillSince = NEVER
+    private var wobbles = 0
 
-    /** One GPS fix: [speedMps] at [atMs], on the same clock as [motion]. */
+    /** One GPS fix at [atMs], on the same clock as [motion]. [speedErrorMps] is the fix's own speed accuracy, if it has one. */
     @Synchronized
-    fun onFix(speedMps: Float, atMs: Long) {
-        lastFixAt = atMs
+    fun onFix(speedMps: Float, speedErrorMps: Float?, atMs: Long) {
+        // A gap in the fixes is a gap in the evidence: what was true before it proves nothing now.
+        if (lastFixAt != NEVER && atMs - lastFixAt > STALE_MS) notStill()
+        lastFixAt = maxOf(lastFixAt, atMs)
+        val trusted = speedErrorMps == null || speedErrorMps <= MAX_SPEED_ERROR_MPS
         when {
-            speedMps >= MOVE_MPS -> stillSince = NEVER
-            speedMps <= STOP_MPS -> if (stillSince == NEVER) stillSince = atMs
-            // Between the two, keep what we had: a GPS wobble shouldn't flip the answer either way.
+            speedMps >= MOVE_MPS -> notStill()
+            !trusted -> notStill()
+            speedMps <= STOP_MPS -> {
+                wobbles = 0
+                if (stillSince == NEVER) stillSince = atMs
+            }
+            // Between the two speeds: one reading is GPS noise, two in a row is a car creeping forward.
+            else -> if (++wobbles >= MAX_WOBBLES) notStill()
         }
+    }
+
+    private fun notStill() {
+        stillSince = NEVER
+        wobbles = 0
     }
 
     @Synchronized
@@ -41,7 +61,7 @@ class ParkDetector {
     @Synchronized
     fun reset() {
         lastFixAt = NEVER
-        stillSince = NEVER
+        notStill()
     }
 
     companion object {
@@ -52,13 +72,11 @@ class ParkDetector {
         /** 5.4 km/h. Walking pace: anything at or above this is driving. */
         const val MOVE_MPS = 1.5f
         const val HOLD_MS = 4_000L
-        const val STALE_MS = 5_000L
-        /** A fix whose own speed error is worse than this says nothing about being stopped. */
+        /** GPS reports once a second, so this allows for one missed fix. Shorter than [HOLD_MS] on purpose. */
+        const val STALE_MS = 2_500L
+        /** A slow fix whose own speed error is worse than this says nothing about being stopped. */
         const val MAX_SPEED_ERROR_MPS = 1.5f
-
-        /** True when [speedErrorMps], the fix's reported speed accuracy if it has one, is good enough to use. */
-        fun usable(hasSpeed: Boolean, speedErrorMps: Float?): Boolean =
-            hasSpeed && (speedErrorMps == null || speedErrorMps <= MAX_SPEED_ERROR_MPS)
+        const val MAX_WOBBLES = 2
     }
 }
 
@@ -67,9 +85,10 @@ object CarMotion {
     private val detector = ParkDetector()
 
     fun onLocation(location: Location) {
+        // Only the GPS chip measures speed. Other providers pass it on late, estimate it, or report zero.
+        if (location.provider != LocationManager.GPS_PROVIDER || !location.hasSpeed()) return
         val speedError = if (location.hasSpeedAccuracy()) location.speedAccuracyMetersPerSecond else null
-        if (!ParkDetector.usable(location.hasSpeed(), speedError)) return
-        detector.onFix(location.speed, location.elapsedRealtimeNanos / 1_000_000)
+        detector.onFix(location.speed, speedError, location.elapsedRealtimeNanos / 1_000_000)
     }
 
     fun motion(): Motion = detector.motion(SystemClock.elapsedRealtime())
