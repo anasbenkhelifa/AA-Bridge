@@ -443,8 +443,14 @@ class CarSession(
     }
 
     override fun onKey(key: Int) {
-        logger.log("car key $key")
-        if (key == MirrorControlChannel.KEY_HOME || key == MirrorControlChannel.KEY_BACK) closeAa()
+        val action = dev.caraalink.settings.CarKeys.actionFor(context, key)
+        logger.log("car key $key -> $action")
+        dev.caraalink.settings.CarKeys.report(key)
+        val keycode = action.aaKeycode
+        when {
+            action == dev.caraalink.settings.CarKeyAction.CLOSE_AA -> closeAa()
+            keycode != null -> dev.caraalink.aa.AaSessionProbe.active?.sendKey(keycode)
+        }
     }
 
     override fun onDataStreamOpen(stream: MirrorStream) {

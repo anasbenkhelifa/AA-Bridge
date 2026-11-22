@@ -98,4 +98,23 @@
     <string name="tile_link">الاتصال</string>
     <string name="link_wireless_short">لاسلكي</string>
     <string name="link_cable_short">كابل</string>
+    <string name="settings_car_buttons">أزرار السيارة</string>
+    <string name="buttons_hint">أثناء الاتصال، اضغط زرًّا في سيارتك أو على عجلة القيادة. سيظهر هنا، ثم اختر وظيفته.</string>
+    <string name="buttons_last">آخر زر تم ضغطه</string>
+    <string name="buttons_none_yet">لم يُضغط أي زر بعد</string>
+    <string name="buttons_home">زر الصفحة الرئيسية</string>
+    <string name="buttons_back">زر الرجوع</string>
+    <string name="buttons_number">الزر %1$d</string>
+    <string name="buttons_note">الأزرار التي تعمل بالفعل عبر بلوتوث السيارة، مثل المقطع التالي، لا تحتاج إلى ضبط هنا.</string>
+    <string name="action_none">لا شيء</string>
+    <string name="action_close">إغلاق Android Auto</string>
+    <string name="action_back">رجوع</string>
+    <string name="action_home">الصفحة الرئيسية في Android Auto</string>
+    <string name="action_voice">المساعد الصوتي</string>
+    <string name="action_play_pause">تشغيل أو إيقاف مؤقت</string>
+    <string name="action_next">المقطع التالي</string>
+    <string name="action_previous">المقطع السابق</string>
+    <string name="action_call">الرد على المكالمة</string>
+    <string name="action_end_call">إنهاء المكالمة</string>
+    <string name="cancel">إلغاء</string>
 </resources>

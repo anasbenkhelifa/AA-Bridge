@@ -3,7 +3,7 @@ package dev.caraalink.aa
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-/** The input source: the car's touchscreen, reported to the phone. */
+/** The input source: the car's touchscreen and buttons, reported to the phone. */
 internal class AaInputChannel(
     private val log: (String) -> Unit,
     // sendTouch() is called from whatever thread owns the UI -- a raw socket
@@ -54,6 +54,25 @@ internal class AaInputChannel(
         }
     }
 
+    /**
+     * One press of [keycode], an Android key code offered in service
+     * discovery: a down report, then an up. `InputReport{timestamp=1,
+     * key_event=4 {keys=1 (repeated) [{keycode=1, down=2, metastate=3,
+     * longpress=4}]}}` -- aasdk's `InputSourceService::sendInputReport()`
+     * with a ButtonEvent, the way openauto reports its own buttons. No-op
+     * while no session is up.
+     */
+    fun sendKey(keycode: Int) {
+        val link = link ?: return
+        executor.execute {
+            for (down in booleanArrayOf(true, false)) {
+                val report = keyReport(System.nanoTime() / 1000, keycode, down)
+                runCatching { link.sendChannelSpecific(channelId, AaFraming.MSG_INPUT_REPORT, report) }
+                    .onFailure { log("sendKey failed: $it") }
+            }
+        }
+    }
+
     override fun release() {
         executor.shutdownNow()
     }
@@ -66,6 +85,12 @@ internal class AaInputChannel(
             }
             touchEvent.int(2, actionIndex).int(3, action)
             return AaProtobuf.Writer().varint(1, timestampUs).message(3, touchEvent.build()).build()
+        }
+
+        fun keyReport(timestampUs: Long, keycode: Int, down: Boolean): ByteArray {
+            val key = AaProtobuf.Writer().int(1, keycode).bool(2, down).int(3, 0).bool(4, false).build()
+            val keyEvent = AaProtobuf.Writer().message(1, key).build()
+            return AaProtobuf.Writer().varint(1, timestampUs).message(4, keyEvent).build()
         }
     }
 }

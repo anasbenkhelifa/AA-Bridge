@@ -20,6 +20,7 @@ import dev.caraalink.aa.AaVersionProbe
 import dev.caraalink.service.UsbLinkForegroundService
 import dev.caraalink.settings.AppSettings
 import dev.caraalink.ui.AboutScreen
+import dev.caraalink.ui.CarButtonsScreen
 import dev.caraalink.ui.HelpScreen
 import dev.caraalink.ui.HomeScreen
 import dev.caraalink.ui.NearbyCarsScreen
@@ -27,7 +28,7 @@ import dev.caraalink.ui.SettingsScreen
 import dev.caraalink.ui.SetupScreen
 import dev.caraalink.ui.theme.AaBridgeTheme
 
-enum class Screen { SETUP, HOME, SETTINGS, HELP, ABOUT, NEARBY }
+enum class Screen { SETUP, HOME, SETTINGS, HELP, ABOUT, NEARBY, BUTTONS }
 
 /** The phone app: one Compose activity; also where Android sends the car's USB attach. */
 class MainActivity : ComponentActivity() {
@@ -60,6 +61,7 @@ class MainActivity : ComponentActivity() {
                     screen = when {
                         screen == Screen.NEARBY -> nearbyFrom
                         fromSettings && (screen == Screen.HELP || screen == Screen.ABOUT) -> Screen.SETTINGS
+                        screen == Screen.BUTTONS -> Screen.SETTINGS
                         else -> Screen.HOME
                     }
                     if (screen == Screen.HOME) fromSettings = false
@@ -76,7 +78,9 @@ class MainActivity : ComponentActivity() {
                         onBack = back,
                         onHelp = { fromSettings = true; screen = Screen.HELP },
                         onAbout = { fromSettings = true; screen = Screen.ABOUT },
+                        onCarButtons = { screen = Screen.BUTTONS },
                     )
+                    Screen.BUTTONS -> CarButtonsScreen(onBack = back)
                     Screen.HELP -> HelpScreen(onBack = back, onRunSetup = { fromSettings = false; screen = Screen.SETUP })
                     Screen.ABOUT -> AboutScreen(onBack = back)
                     Screen.NEARBY -> NearbyCarsScreen(onBack = back, onConnecting = { screen = Screen.HOME })

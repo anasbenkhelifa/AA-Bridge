@@ -101,6 +101,9 @@ class AaSessionProbe(
     fun sendTouch(pointers: List<Triple<Int, Int, Int>>, actionIndex: Int, action: Int) =
         input.sendTouch(pointers, actionIndex, action)
 
+    /** One press of an Android key code to the phone; see [AaInputChannel.sendKey]. No-op while no session is up. */
+    fun sendKey(keycode: Int) = input.sendKey(keycode)
+
     /** Single-finger convenience overload -- same as `sendTouch(listOf(Triple(x,y,pointerId)), 0, action)`. */
     fun sendTouch(x: Int, y: Int, action: Int, pointerId: Int = 0) {
         sendTouch(listOf(Triple(x, y, pointerId)), 0, action)

@@ -53,6 +53,18 @@ class AaServiceDiscoveryTest {
     }
 
     @Test
+    fun `the input source offers the car's buttons next to the touchscreen`() {
+        val response = AaProtobuf.parse(AaServiceDiscovery.build(AaServiceDiscovery.Config(keycodes = listOf(4, 84, 87))))
+        val inputService = response.filter { it.number == 1 }.map { AaProtobuf.parse(it.bytes!!) }
+            .first { svc -> svc.first { it.number == 1 }.varint == AaServiceDiscovery.CHANNEL_INPUT_SOURCE.toLong() }
+        val source = AaProtobuf.parse(inputService.first { it.number == 4 }.bytes!!)
+
+        assertEquals(listOf(4L, 84L, 87L), source.filter { it.number == 1 }.map { it.varint })
+        val touchscreen = AaProtobuf.parse(source.single { it.number == 2 }.bytes!!)
+        assertEquals(1920L to 720L, touchscreen.first { it.number == 1 }.varint to touchscreen.first { it.number == 2 }.varint)
+    }
+
+    @Test
     fun `unknown car dimensions (no car connected yet) means no crop`() {
         val (widthMargin, heightMargin) = AaServiceDiscovery.autoMargin(AaResolution.R1920X1080, carWidth = 0, carHeight = 0)
 

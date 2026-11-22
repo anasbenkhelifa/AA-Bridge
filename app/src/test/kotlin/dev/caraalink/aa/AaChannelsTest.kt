@@ -252,6 +252,32 @@ class AaChannelsTest {
     }
 
     @Test
+    fun `a button press goes out as a key down then a key up`() {
+        val input = AaInputChannel(log, DirectExecutor())
+        input.onSessionStart(link)
+
+        input.sendKey(87)
+
+        assertEquals(listOf(AaFraming.MSG_INPUT_REPORT, AaFraming.MSG_INPUT_REPORT), link.ids())
+        val keys = link.sent.map { report ->
+            val keyEvent = AaProtobuf.parse(report.body).first { it.number == 4 }.bytes!!
+            AaProtobuf.parse(keyEvent).single { it.number == 1 }.bytes!!
+        }
+        assertEquals(listOf(87L, 87L), keys.map { it.field(1) })
+        assertEquals(listOf(1L, 0L), keys.map { it.field(2) })
+        assertEquals(listOf(0L, 0L), keys.map { it.field(3) }) // metastate is required
+    }
+
+    @Test
+    fun `a button press is dropped while no session is up`() {
+        val input = AaInputChannel(log, DirectExecutor())
+
+        input.sendKey(87)
+
+        assertTrue(link.sent.isEmpty())
+    }
+
+    @Test
     fun `touch is dropped while no session is up`() {
         val input = AaInputChannel(log, DirectExecutor())
 

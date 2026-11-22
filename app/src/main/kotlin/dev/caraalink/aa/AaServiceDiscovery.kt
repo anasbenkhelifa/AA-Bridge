@@ -20,7 +20,7 @@ import dev.caraalink.settings.AppSettings
  * - `service/media/sink/message/VideoConfiguration.proto`
  *     codec_resolution = 1, frame_rate = 2, density = 5, video_codec_type = 10
  * - `service/inputsource/InputSourceService.proto`
- *     touchscreen = 2 { width = 1, height = 2, type = 3 }
+ *     keycodes_supported = 1, touchscreen = 2 { width = 1, height = 2, type = 3 }
  * - enums: `VideoCodecResolutionType`, `VideoFrameRateType`,
  *   `MediaCodecType`, `DriverPosition`
  *
@@ -120,6 +120,8 @@ object AaServiceDiscovery {
         val driverPosition: Int = DRIVER_POSITION_LEFT,
         /** Declare only the required system sink, so AA plays media and guidance on the phone itself. */
         val phoneMediaAudio: Boolean = false,
+        /** Android key codes the car's buttons can send; AA ignores a key it wasn't offered here. */
+        val keycodes: List<Int> = dev.caraalink.settings.CarKeys.AA_KEYCODES,
     )
 
     /**
@@ -300,7 +302,11 @@ object AaServiceDiscovery {
             .int(2, config.touchHeight)
             .build()
 
+        // keycodes_supported is a plain (unpacked) repeated field in aasdk's
+        // InputSourceService.proto; openauto's InputService::fillFeatures()
+        // lists its buttons the same way, next to the touchscreen.
         val inputSource = AaProtobuf.Writer()
+            .apply { config.keycodes.forEach { int(1, it) } } // keycodes_supported (repeated)
             .message(2, touchscreen)                 // touchscreen (repeated)
             .build()
 

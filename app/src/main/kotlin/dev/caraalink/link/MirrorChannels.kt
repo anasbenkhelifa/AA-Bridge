@@ -176,8 +176,8 @@ class MirrorControlChannel(
         const val RLY_UN_SUPPORT = 0x7F02
         const val RLY_INIT_FAILED = 0x7F05
         const val H264 = 2
-        const val KEY_HOME = 1042
-        const val KEY_BACK = 1044
+        const val KEY_HOME = dev.caraalink.settings.CarKeys.KEY_HOME
+        const val KEY_BACK = dev.caraalink.settings.CarKeys.KEY_BACK
     }
 }
 

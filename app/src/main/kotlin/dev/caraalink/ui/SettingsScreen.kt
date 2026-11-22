@@ -67,10 +67,13 @@ fun SubScreen(title: String, onBack: () -> Unit, content: @Composable ColumnScop
 }
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onHelp: () -> Unit, onAbout: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onHelp: () -> Unit, onAbout: () -> Unit, onCarButtons: () -> Unit) {
     val context = LocalContext.current
     SubScreen(stringResource(R.string.settings), onBack) {
         WirelessCarRow()
+        DashGroup {
+            SettingsRow(painterResource(R.drawable.ic_touch_app), stringResource(R.string.settings_car_buttons), onCarButtons)
+        }
         DashGroup {
             SettingsRow(rememberVectorPainter(Icons.Rounded.Refresh), stringResource(R.string.settings_updates)) {
                 UpdateChecker.checkNow(context, manual = true)
@@ -109,7 +112,7 @@ private fun WirelessCarRow() {
 
 /** A dashboard tile holding a few rows. */
 @Composable
-private fun DashGroup(content: @Composable ColumnScope.() -> Unit) {
+internal fun DashGroup(content: @Composable ColumnScope.() -> Unit) {
     val shape = RoundedCornerShape(18.dp)
     Column(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).clip(shape).background(Dash.Tile).border(1.dp, Dash.TileBorder, shape),
