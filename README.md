@@ -52,9 +52,23 @@ The app walks you through this the first time:
 ## Every drive
 
 - **Cable:** plug in. Android Auto opens on the car screen by itself.
-- **Wireless:** open AA Bridge. It finds your car and connects. You can close the app after that.
+- **Wireless:** open AA Bridge. It finds your car and connects. You can close the app after that. With Connect when I get in the car turned on, it starts by itself.
 
 Plugging in the cable while connected wirelessly switches over without restarting Android Auto. Music, navigation voice and calls play through the phone's Bluetooth to the car, so keep the phone paired with the car.
+
+## Options
+
+In the app's Settings:
+
+- **Sharper picture:** draws Android Auto at 1080p instead of 720p. It looks crisper on wide car screens and works the phone harder. If the phone reports severe heat, Android Auto restarts once at 720p and stays there for the rest of the drive.
+- **Car buttons:** while connected, press a button on the car or the steering wheel. It appears in the list, and you choose what it does: back, home, voice assistant, play or pause, next, previous, answer, end call, or close Android Auto. Back goes back and Home closes Android Auto until you change them. Buttons that already work through the car's Bluetooth don't need setting.
+- **Connect when I get in the car:** appears once a car is remembered for wireless. Choose the car from your paired Bluetooth devices, and the wireless connection starts when the phone joins it. Android does not give the microphone or location to a connection started this way, so open AA Bridge once during the drive if the voice button can't hear you.
+
+Under Advanced:
+
+- **Parked detection** (on): Android Auto is told the car is parked only while GPS shows it stopped, so the keyboard works then. While the car moves, or without a GPS fix, the normal driving limits apply. There is no way to report the car as always parked.
+- **Remember settings per car** (on): screen, video and car button settings are kept for each car and come back when that car connects.
+- **Lower video when the phone overheats** (on): the heat step-down described above.
 
 ## If something goes wrong
 
