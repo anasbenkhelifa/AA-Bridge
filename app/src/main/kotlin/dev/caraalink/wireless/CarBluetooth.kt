@@ -45,6 +45,10 @@ object CarBluetooth {
     internal fun shouldStart(carAddress: String?, connectedAddress: String?, canConnect: Boolean): Boolean =
         carAddress != null && carAddress.equals(connectedAddress, ignoreCase = true) && canConnect
 
+    /** The car's Bluetooth going away ends a wireless link; nothing else does, and no service is started for it. */
+    internal fun shouldStop(carAddress: String?, disconnectedAddress: String?, link: dev.caraalink.connection.CarLink): Boolean =
+        carAddress != null && carAddress.equals(disconnectedAddress, ignoreCase = true) && link == dev.caraalink.connection.CarLink.WIRELESS
+
     /**
      * Whether a search started from the background can find the car. Up to
      * Android 12L a Wi-Fi Direct scan counts as location access, and from
@@ -74,11 +78,21 @@ object CarBluetooth {
 class CarBluetoothReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        // A protected broadcast: only the system can send it, so it can't be faked by another app.
-        if (intent.action != BluetoothDevice.ACTION_ACL_CONNECTED) return
+        // Protected broadcasts: only the system can send them, so they can't be faked by another app.
         val car = AppSettings.carBluetooth(context) ?: return
         @Suppress("DEPRECATION")
         val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+        if (intent.action == BluetoothDevice.ACTION_ACL_DISCONNECTED) {
+            // Leaving the car: end a wireless link at once, so its notification goes with it. A cable link ends on unplug.
+            if (CarBluetooth.shouldStop(car.address, device?.address, ConnectionStateHolder.snapshot.link)) {
+                DiagnosticLogger(context, "wireless").log("car Bluetooth disconnected -- stopping the wireless link")
+                runCatching {
+                    context.startService(Intent(context, UsbLinkForegroundService::class.java).setAction(UsbLinkForegroundService.ACTION_STOP))
+                }
+            }
+            return
+        }
+        if (intent.action != BluetoothDevice.ACTION_ACL_CONNECTED) return
         val wirelessCar = AppSettings.wirelessCar(context)
         val canScan = context.checkSelfPermission(NEARBY_PERMISSION) == PackageManager.PERMISSION_GRANTED
         val canConnect = canScan && shouldAutoConnect(ConnectionStateHolder.snapshot, wirelessCar != null)

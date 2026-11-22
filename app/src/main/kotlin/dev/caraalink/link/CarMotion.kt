@@ -26,6 +26,12 @@ class ParkDetector {
     private var lastFixAt = NEVER
     private var stillSince = NEVER
     private var wobbles = 0
+    private var lastSpeedMps = 0f
+
+    /** The last fix's speed in whole km/h, or null with nothing fresh. For display only. */
+    @Synchronized
+    fun speedKmh(nowMs: Long): Int? =
+        if (lastFixAt == NEVER || nowMs - lastFixAt > STALE_MS) null else Math.round(lastSpeedMps * 3.6f)
 
     /** One GPS fix at [atMs], on the same clock as [motion]. [speedErrorMps] is the fix's own speed accuracy, if it has one. */
     @Synchronized
@@ -33,6 +39,7 @@ class ParkDetector {
         // A gap in the fixes is a gap in the evidence: what was true before it proves nothing now.
         if (lastFixAt != NEVER && atMs - lastFixAt > STALE_MS) notStill()
         lastFixAt = maxOf(lastFixAt, atMs)
+        lastSpeedMps = speedMps
         val trusted = speedErrorMps == null || speedErrorMps <= MAX_SPEED_ERROR_MPS
         when {
             speedMps >= MOVE_MPS -> notStill()
@@ -92,6 +99,8 @@ object CarMotion {
     }
 
     fun motion(): Motion = detector.motion(SystemClock.elapsedRealtime())
+
+    fun speedKmh(): Int? = detector.speedKmh(SystemClock.elapsedRealtime())
 
     fun reset() = detector.reset()
 }

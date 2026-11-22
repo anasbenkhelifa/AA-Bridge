@@ -228,7 +228,9 @@ object AaServiceDiscovery {
         // exclusive: FIT relies on the margin for a clean no-letterbox fit;
         // FILL needs the full uncropped frame to crop from itself.
         val (widthMargin, heightMargin) = if (AppSettings.aaAutoCrop(context) && AppSettings.aaFillMode(context) == AppSettings.AaFillMode.FIT) {
-            autoMargin(resolution, dev.caraalink.link.CarScreenInfo.width, dev.caraalink.link.CarScreenInfo.height)
+            // With the side strip on, Android Auto is drawn for the part of the screen the strip leaves it.
+            val carWidth = dev.caraalink.video.AaSidebar.contentWidth(dev.caraalink.link.CarScreenInfo.width, AppSettings.aaSidebar(context))
+            autoMargin(resolution, carWidth, dev.caraalink.link.CarScreenInfo.height)
         } else 0 to 0
         return Config(
             resolution = resolution, frameRate = frameRate, density = density,

@@ -126,4 +126,13 @@
     <string name="settings_bt_on">يبدأ عند اتصال هاتفك بـ %1$s. اترك شاشة السيارة على صفحة ربط الهاتف.</string>
     <string name="bt_pick_title">أيّها سيارتك؟</string>
     <string name="bt_pick_empty">لا توجد أجهزة بلوتوث مقترنة. اقرن هاتفك بالسيارة أولًا.</string>
+    <string name="car_kmh">كم/س</string>
+    <string name="car_home">الرئيسية</string>
+    <string name="car_phone_screen">شاشة الهاتف</string>
+    <string name="mirror_channel">شاشة الهاتف على السيارة</string>
+    <string name="mirror_notif_title">اعرض هاتفك على شاشة السيارة</string>
+    <string name="mirror_notif_text">اضغط هنا، ثم اسمح بمشاركة الشاشة.</string>
+    <string name="mirror_allow_on_phone">على هاتفك، اضغط على إشعار AA Bridge واسمح بمشاركة الشاشة.</string>
+    <string name="mirror_moving">شاشة الهاتف مخفية أثناء سير السيارة.</string>
+    <string name="mirror_touch_description">يسمح بوصول اللمس على شاشة السيارة إلى هاتفك أثناء عرض شاشته عليها. لا يقرأ AA Bridge أي شيء من شاشتك.</string>
 </resources>

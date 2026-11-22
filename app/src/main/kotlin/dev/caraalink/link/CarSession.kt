@@ -35,7 +35,7 @@ class CarSession(
     private var encoder: CarVideoEncoder? = null
     private var pxc: PxcChannel? = null
     private val features = CarFeatures(context)
-    private val display = CarDisplay(context, onOpenAa = { openAndroidAuto() })
+    private val display = CarDisplay(context, onOpenAa = { openAndroidAuto() }, onLeaveAa = { closeAa() })
 
     /** The driver left Android Auto on purpose; stay on Closed until they tap to reopen. */
     private fun closeAa() {
@@ -474,6 +474,15 @@ class CarSession(
         val action = dev.caraalink.settings.CarKeys.actionFor(context, key)
         logger.log("car key $key -> $action")
         dev.caraalink.settings.CarKeys.report(key)
+        if (display.mode == CarDisplay.Mode.MIRROR) {
+            // On the phone's screen Back is the phone's Back; anything set to close goes to the car home screen.
+            when (action) {
+                dev.caraalink.settings.CarKeyAction.BACK -> dev.caraalink.mirror.MirrorTouchService.back()
+                dev.caraalink.settings.CarKeyAction.CLOSE_AA, dev.caraalink.settings.CarKeyAction.HOME -> display.showStatus(CarScreen.CLOSED)
+                else -> {}
+            }
+            return
+        }
         val keycode = action.aaKeycode
         when {
             action == dev.caraalink.settings.CarKeyAction.CLOSE_AA -> closeAa()

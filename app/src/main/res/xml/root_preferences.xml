@@ -91,6 +91,16 @@
             android:entryValues="@array/aa_audio_route_values"
             android:defaultValue="phone_direct" />
         <SwitchPreferenceCompat
+            android:key="aa_sidebar"
+            android:title="Side strip next to Android Auto"
+            android:summary="A strip at the edge of the car screen with the time, the speed and a home button. Android Auto is drawn for the space that is left. Best on wide screens."
+            android:defaultValue="false" />
+        <SwitchPreferenceCompat
+            android:key="aa_speed_badge"
+            android:title="Speed in the corner of Android Auto"
+            android:summary="A small GPS speed readout over the top corner. Not shown with the side strip, which has its own."
+            android:defaultValue="false" />
+        <SwitchPreferenceCompat
             android:key="aa_thermal_guard"
             android:title="Lower video when the phone overheats"
             android:summary="When the phone reports severe heat, Android Auto restarts once at 720p and 30 fps and stays there until the drive ends. Nothing changes if it is already at that."
@@ -105,6 +115,23 @@
             android:title="Auto-crop to car screen shape"
             android:summary="Computes the AA video crop automatically from this car's real screen size, instead of a plain letterbox. Turn off if the picture looks worse than Fit/Fill alone."
             android:defaultValue="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Car home screen and phone screen">
+        <SwitchPreferenceCompat
+            android:key="car_weather"
+            android:title="Weather on the car home screen"
+            android:summary="Shows the outside temperature. To get it, your position, rounded to about a kilometre, is sent to open-meteo.com every half hour."
+            android:defaultValue="false" />
+        <SwitchPreferenceCompat
+            android:key="mirror_hide_moving"
+            android:title="Hide the phone screen while moving"
+            android:summary="When you show the phone's screen on the car, the picture is covered unless GPS shows the car stopped. Turn off only for passengers: the screen is in the driver's view, and video in sight of the driver is illegal in many places."
+            android:defaultValue="true" />
+        <Preference
+            android:key="mirror_touch"
+            android:title="Touch for the phone screen"
+            android:summary="Opens Accessibility. Turn on AA Bridge there so taps on the car screen reach the phone. It reads nothing from your screen." />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Connection">

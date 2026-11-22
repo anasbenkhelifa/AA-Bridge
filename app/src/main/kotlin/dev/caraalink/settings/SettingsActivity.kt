@@ -27,7 +27,7 @@ class SettingsActivity : AppCompatActivity() {
         private val videoSettingKeys = setOf(
             "car_orientation", "video_resolution_mode", "video_resolution_custom_width",
             "video_resolution_custom_height", "video_frame_rate", "video_dpi_auto", "video_dpi_manual",
-            "aa_auto_crop", "video_downscale_720p",
+            "aa_auto_crop", "video_downscale_720p", "aa_sidebar", "aa_speed_badge",
         )
         private val prefsListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key in videoSettingKeys) {
@@ -56,6 +56,10 @@ class SettingsActivity : AppCompatActivity() {
 
             findPreference<Preference>("developer_tools")?.setOnPreferenceClickListener {
                 startActivity(Intent(requireContext(), dev.caraalink.diagnostics.DeveloperToolsActivity::class.java))
+                true
+            }
+            findPreference<Preference>("mirror_touch")?.setOnPreferenceClickListener {
+                runCatching { startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
                 true
             }
             findPreference<Preference>("car_profiles")?.setOnPreferenceClickListener {

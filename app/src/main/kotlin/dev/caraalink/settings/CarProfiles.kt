@@ -34,6 +34,8 @@ object CarProfiles {
         "video_downscale_720p",
         "aa_fill_mode",
         "aa_auto_crop",
+        "aa_sidebar",
+        "aa_speed_badge",
         "aa_audio_route",
         CarKeys.PREF_KEY,
     )

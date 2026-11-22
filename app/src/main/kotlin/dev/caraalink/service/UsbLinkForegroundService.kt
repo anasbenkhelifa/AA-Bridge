@@ -142,6 +142,18 @@ class UsbLinkForegroundService : Service() {
                     ?: AppSettings.wirelessCar(this)
                 beginWireless(target, auto = intent.getBooleanExtra(EXTRA_AUTO, false))
             }
+            ACTION_MIRROR_CONSENT -> {
+                @Suppress("DEPRECATION")
+                val data = intent.getParcelableExtra<Intent>(EXTRA_RESULT_DATA)
+                if (!foregroundStarted || data == null) {
+                    if (!foregroundStarted) stopSelf()
+                } else {
+                    // The capture may only start once the service holds the mediaProjection type.
+                    projecting = true
+                    val ok = runCatching { startForegroundWithMic() }.isSuccess
+                    if (ok) dev.caraalink.mirror.PhoneMirror.onConsent(this, intent.getIntExtra(EXTRA_RESULT_CODE, 0), data) else projecting = false
+                }
+            }
             ACTION_REFRESH_FOREGROUND -> {
                 // The app is on screen now, so Android grants the microphone and location types it
                 // refused to a start from the background.
@@ -313,18 +325,23 @@ class UsbLinkForegroundService : Service() {
         // The microphone type only exists from Android 11; on 10 it's an undeclared type and throws.
         val mic = if (micGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE else 0
         val location = if (hasLocation()) ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0
+        val base = ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or
+            (if (projecting) ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION else 0)
         for (extra in foregroundTypeLadder(mic, location)) {
             try {
-                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or extra)
+                startForeground(NOTIFICATION_ID, notification, base or extra)
                 foregroundStarted = true
                 return
             } catch (e: SecurityException) {
                 Log.w(TAG, "startForeground with extra types $extra refused -- retrying with fewer", e)
             }
         }
-        startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+        startForeground(NOTIFICATION_ID, notification, base)
         foregroundStarted = true
     }
+
+    /** The driver allowed screen sharing, so the service also holds the mediaProjection type. */
+    private var projecting = false
 
     /** True once this service has gone foreground for a car link. */
     private var foregroundStarted = false
@@ -596,6 +613,14 @@ class UsbLinkForegroundService : Service() {
         adbProbe?.stop()
         adbProbe = null
         dev.caraalink.video.ThermalGuard.stop(this)
+        dev.caraalink.mirror.PhoneMirror.stop()
+        projecting = false
+        // Nothing of ours should outlive the drive in the notification shade.
+        runCatching {
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.cancel(VIDEO_LOWERED_ID)
+            manager.cancel(OPEN_TO_RECONNECT_ID)
+        }
         releaseWakeLock()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -704,6 +729,9 @@ class UsbLinkForegroundService : Service() {
             if (now < reconnectUntil) null else WirelessPhase.FAILED
 
         const val ACTION_START_WIRELESS = "dev.caraalink.service.action.START_WIRELESS"
+        const val ACTION_MIRROR_CONSENT = "dev.caraalink.service.action.MIRROR_CONSENT"
+        const val EXTRA_RESULT_CODE = "result_code"
+        const val EXTRA_RESULT_DATA = "result_data"
         const val ACTION_REFRESH_FOREGROUND = "dev.caraalink.service.action.REFRESH_FOREGROUND"
         const val EXTRA_AUTO = "auto"
         const val EXTRA_CAR_ADDRESS = "car_address"

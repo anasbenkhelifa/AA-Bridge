@@ -64,7 +64,18 @@ In the app's Settings:
 - **Car buttons:** while connected, press a button on the car or the steering wheel. It appears in the list, and you choose what it does: back, home, voice assistant, play or pause, next, previous, answer, end call, or close Android Auto. Back goes back and Home closes Android Auto until you change them. Buttons that already work through the car's Bluetooth don't need setting.
 - **Connect when I get in the car:** appears once a car is remembered for wireless. Choose the car from your paired Bluetooth devices, and the wireless connection starts when the phone joins it. Android does not give the microphone or location to a connection started this way, so open AA Bridge once during the drive if the voice button can't hear you. On Android 11 and 12 a connection started this way can't scan for the car at all, so a notification asks for one tap instead.
 
+On the car screen, closing Android Auto (the Home button) shows a home screen with the time, the speed, music buttons, and two tiles:
+
+- **Open Android Auto.**
+- **Phone screen:** shows whatever is on your phone, so any app can go on the car screen. The phone has to be unlocked and stay on. Each drive, the phone asks once to allow screen sharing; tap the AA Bridge notification to see the question. For taps on the car screen to reach the phone, turn on AA Bridge under Accessibility (Advanced > Touch for the phone screen). The car's Back button is the phone's Back. The picture is covered while the car moves unless you turn that off in Advanced.
+
+With Connect when I get in the car set, a wireless link also stops as soon as the phone leaves the car's Bluetooth, and its notification goes with it. Android requires the notification while a link is running.
+
 Under Advanced:
+
+- **Side strip next to Android Auto** (off): a strip with the time, the speed and a Home button. Android Auto is drawn for the space that is left.
+- **Speed in the corner of Android Auto** (off).
+- **Weather on the car home screen** (off): shows the temperature; it sends your position, rounded to about a kilometre, to open-meteo.com.
 
 - **Parked detection** (on): Android Auto is told the car is parked only while GPS shows it stopped, so the keyboard works then. While the car moves, or without a GPS fix, the normal driving limits apply. There is no way to report the car as always parked.
 - **Remember settings per car** (on): screen, video and car button settings are kept for each car and come back when that car connects.

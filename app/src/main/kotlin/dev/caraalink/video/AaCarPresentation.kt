@@ -44,6 +44,8 @@ class AaCarPresentation(
     private val heightMargin: Int = 0,
     private val onSurface: (Surface?) -> Unit,
     private val onTouch: (pointers: List<Triple<Int, Int, Int>>, actionIndex: Int, action: Int) -> Unit,
+    /** The side strip's home button: leave Android Auto for the car home screen. */
+    private val onHome: () -> Unit = {},
 ) : Presentation(context, display) {
 
     private var surface: Surface? = null
@@ -164,7 +166,19 @@ class AaCarPresentation(
                 texture.post { texture.layoutParams = lp }
             }
         }
-        root.addView(area, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        // The side strip takes its share of the screen's width; Android Auto was asked to draw for what is left
+        // (AaServiceDiscovery.configFromSettings), so it fills that without being squeezed.
+        val strip = if (dev.caraalink.settings.AppSettings.aaSidebar(context)) {
+            (context.resources.displayMetrics.widthPixels * AaSidebar.FRACTION).toInt()
+        } else 0
+        root.addView(area, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT).apply { marginEnd = strip })
+        if (strip > 0) {
+            root.addView(AaSidebar.view(context, onHome), FrameLayout.LayoutParams(strip, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.END))
+        } else if (dev.caraalink.settings.AppSettings.aaSpeedBadge(context)) {
+            root.addView(AaSidebar.speedBadge(context), FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.END,
+            ).apply { topMargin = dp(12); marginEnd = dp(12) })
+        }
         root.addView(starting, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         dev.caraalink.diagnostics.PerfStats.attachHud(context, root)
         setContentView(root)

@@ -201,6 +201,18 @@ object AppSettings {
     fun setVideoDownscale720p(context: Context, value: Boolean) =
         prefs(context).edit().putBoolean("video_downscale_720p", value).apply()
 
+    /** A strip beside Android Auto with the time, the speed and a home button (dev.caraalink.video.AaSidebar). */
+    fun aaSidebar(context: Context): Boolean = prefs(context).getBoolean("aa_sidebar", false)
+
+    /** A small speed readout in a corner of Android Auto. The side strip already has one. */
+    fun aaSpeedBadge(context: Context): Boolean = prefs(context).getBoolean("aa_speed_badge", false)
+
+    /** Hide the mirrored phone screen unless the car is known to be stopped. */
+    fun mirrorHideMoving(context: Context): Boolean = prefs(context).getBoolean("mirror_hide_moving", true)
+
+    /** Show the outside temperature on the car home screen; sends a rounded position to open-meteo.com. */
+    fun carWeather(context: Context): Boolean = prefs(context).getBoolean("car_weather", false)
+
     /** Keep the per-car settings (CarProfiles) separately for each head unit and bring them back when it connects. */
     fun rememberPerCar(context: Context): Boolean =
         prefs(context).getBoolean("car_memory", true)

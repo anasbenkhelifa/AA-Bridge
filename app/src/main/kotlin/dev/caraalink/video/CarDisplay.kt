@@ -21,8 +21,9 @@ import android.view.WindowManager
 class CarDisplay(
     private val context: Context,
     private val onOpenAa: () -> Unit,
+    private val onLeaveAa: () -> Unit = {},
 ) {
-    enum class Mode { STATUS, AA }
+    enum class Mode { STATUS, AA, MIRROR }
 
     private val main = Handler(Looper.getMainLooper())
     private val logger = DiagnosticLogger(context, "car-display")
@@ -79,6 +80,13 @@ class CarDisplay(
         showCurrent()
     }
 
+    /** The phone's own screen, opened from the car home screen. Android Auto is closed by then. */
+    fun showMirror() = main.post {
+        screen = CarScreen.CLOSED
+        mode = Mode.MIRROR
+        showCurrent()
+    }
+
     private var aaVideoSize: Pair<Int, Int>? = null
     private var aaMargin: Pair<Int, Int> = 0 to 0
     private var aaOnSurface: ((Surface?) -> Unit)? = null
@@ -90,9 +98,12 @@ class CarDisplay(
         presentation = try {
             when {
                 mode == Mode.AA && aaVideoSize != null -> aaPresentation(display)
+                mode == Mode.MIRROR -> MirrorCarPresentation(context, display)
                 else -> {
                     mode = Mode.STATUS
-                    CarStatusPresentation(context, display, screen, onOpenAa)
+                    // Closed is nothing going wrong, so it gets the home screen; the rest are messages.
+                    if (screen == CarScreen.CLOSED) CarHomePresentation(context, display, onOpenAa, ::showMirror)
+                    else CarStatusPresentation(context, display, screen, onOpenAa)
                 }
             }.also { it.show() }
         } catch (e: WindowManager.InvalidDisplayException) {
@@ -108,6 +119,7 @@ class CarDisplay(
             context, display, w, h, wm, hm,
             onSurface = { s -> aaOnSurface?.invoke(s) },
             onTouch = { pointers, actionIndex, action -> aaOnTouch?.invoke(pointers, actionIndex, action) },
+            onHome = onLeaveAa,
         )
     }
 
