@@ -3,17 +3,24 @@ package dev.caraalink.video
 import android.app.Presentation
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Outline
 import android.graphics.Typeface
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.media.AudioManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.TextUtils
 import android.util.TypedValue
 import android.view.Display
 import android.view.Gravity
 import android.view.KeyEvent
+import android.view.View
 import android.view.ViewGroup
+import android.view.ViewOutlineProvider
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextClock
 import android.widget.TextView
@@ -22,10 +29,11 @@ import dev.caraalink.link.CarMotion
 import dev.caraalink.settings.AppSettings
 
 /**
- * The car's home screen, shown whenever Android Auto isn't: the time, the
- * speed, the weather if asked for, music buttons, and the things to open
- * from here -- Android Auto, web apps such as YouTube and Claude, the phone's
- * apps, and the phone's own screen.
+ * The car's home screen, shown whenever Android Auto isn't. On the left, a
+ * glass panel with the time, the date, the speed and the weather, and the
+ * music buttons under it. On the right, everything that can be opened, as a
+ * grid of icons the way a phone or CarPlay lays them out: Android Auto, web
+ * apps such as YouTube and Claude, the phone's apps, and the phone's screen.
  */
 class CarHomePresentation(
     context: Context,
@@ -43,7 +51,9 @@ class CarHomePresentation(
     private val tick = object : Runnable {
         override fun run() {
             speed.text = CarWidgets.speedText(CarMotion.speedKmh())
-            weather.text = Weather.line(context)
+            val temperature = Weather.line(context)
+            weather.text = temperature
+            (weather.parent as View).visibility = if (temperature.isEmpty()) View.GONE else View.VISIBLE
             main.postDelayed(this, 1_000)
         }
     }
@@ -52,44 +62,13 @@ class CarHomePresentation(
         super.onCreate(savedInstanceState)
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(0xFF0E1A20.toInt(), 0xFF070B0E.toInt(), 0xFF0A1512.toInt()))
-            setPadding(dp(40), dp(28), dp(32), dp(28))
+            background = CarArt.Backdrop()
+            setPadding(dp(28), dp(26), dp(28), dp(26))
+            // The clock stays on the left and the apps on the right in every language.
+            layoutDirection = View.LAYOUT_DIRECTION_LTR
         }
-
-        val left = column(Gravity.CENTER_VERTICAL or Gravity.START)
-        left.addView(clock("h:mm", "HH:mm", 84f, CarWidgets.TEXT, bold = true))
-        left.addView(clock("EEEE, d MMMM", "EEEE, d MMMM", 22f, CarWidgets.MUTED))
-        val speedRow = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.BOTTOM }
-        speed = label("", 44f, CarWidgets.TEXT, bold = true).also { speedRow.addView(it, gap(0)) }
-        speedRow.addView(label(" " + context.getString(R.string.car_kmh), 20f, CarWidgets.MUTED), gap(0))
-        weather = label("", 22f, CarWidgets.ACCENT).also { speedRow.addView(it, gap(0).apply { marginStart = dp(24) }) }
-        left.addView(speedRow, gap(14))
-        left.addView(mediaRow().apply { gravity = Gravity.START }, gap(18))
-
-        // What can be opened from here, most used first.
-        val pm = context.packageManager
-        fun appIcon(pkg: String?) = pkg?.let { runCatching { pm.getApplicationIcon(it) }.getOrNull() }
-        val tiles = buildList {
-            add(tile(context.getString(R.string.car_android_auto), appIcon(GEARHEAD), accent = true, onClick = onOpenAa))
-            val pages = listOf(CarWebPresentation.Companion.Page("YouTube", CarWebPresentation.YOUTUBE), CarWebPresentation.Companion.Page("Claude", CarWebPresentation.CLAUDE)) +
-                CarWebPresentation.parsePages(AppSettings.carWebPages(context))
-            for (page in pages) add(tile(page.name, appIcon(CarWebPresentation.appFor(page.url))) { onOpenWeb(page.url) })
-            add(tile(context.getString(R.string.car_apps), null, symbol = "▦", onClick = onOpenApps))
-            add(tile(context.getString(R.string.car_phone_screen), null, symbol = "📱", onClick = onOpenMirror))
-        }
-        val right = column(Gravity.CENTER)
-        for (rowTiles in tiles.chunked(TILES_PER_ROW)) {
-            val row = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
-            for (t in rowTiles) row.addView(t, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply {
-                marginStart = dp(8); marginEnd = dp(8)
-            })
-            // A short last row keeps its tiles the same width as the others.
-            repeat(TILES_PER_ROW - rowTiles.size) { row.addView(android.view.View(context), LinearLayout.LayoutParams(0, 1, 1f).apply { marginStart = dp(8); marginEnd = dp(8) }) }
-            right.addView(row, tileParams())
-        }
-
-        root.addView(left, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
-        root.addView(right, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 2.1f))
+        root.addView(panel(), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
+        root.addView(grid(), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 2.15f).apply { marginStart = dp(22) })
         setContentView(root)
     }
 
@@ -105,25 +84,85 @@ class CarHomePresentation(
         super.onStop()
     }
 
-    /** Previous, play or pause, next: sent as media keys, so they reach whatever is playing on the phone. */
-    private fun mediaRow() = LinearLayout(context).apply {
+    // --- the left panel ---
+
+    private fun panel() = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL
+        background = glass(28)
+        setPadding(dp(30), dp(24), dp(30), dp(24))
+
+        addView(TextClock(context).apply {
+            format12Hour = "EEE d MMM"
+            format24Hour = "EEE d MMM"
+            textSize = 16f
+            isAllCaps = true
+            letterSpacing = 0.14f
+            setTextColor(CarWidgets.ACCENT)
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        })
+        addView(TextClock(context).apply {
+            format12Hour = "h:mm"
+            format24Hour = "HH:mm"
+            textSize = 104f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.create("sans-serif-thin", Typeface.NORMAL)
+            includeFontPadding = false
+            letterSpacing = -0.02f
+        }, wrap().apply { topMargin = dp(2) })
+
+        val chips = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+        speed = chipValue()
+        chips.addView(chip(speed, context.getString(R.string.car_kmh)))
+        weather = chipValue()
+        chips.addView(chip(weather, null), wrap().apply { marginStart = dp(10) })
+        addView(chips, wrap().apply { topMargin = dp(10) })
+
+        addView(View(context), LinearLayout.LayoutParams(1, 0, 1f))
+        addView(media())
+    }
+
+    private fun chipValue() = TextView(context).apply {
+        textSize = 20f
+        setTextColor(Color.WHITE)
+        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+    }
+
+    /** A rounded pill with a value and, after it, a quieter unit. */
+    private fun chip(value: TextView, unit: String?) = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.CENTER
-        for ((symbol, key) in listOf(
-            "⏮" to KeyEvent.KEYCODE_MEDIA_PREVIOUS, "⏯" to KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, "⏭" to KeyEvent.KEYCODE_MEDIA_NEXT,
-        )) {
-            addView(TextView(context).apply {
-                text = symbol
-                textSize = 30f
-                setTextColor(CarWidgets.TEXT)
-                gravity = Gravity.CENTER
-                setPadding(dp(22), dp(10), dp(22), dp(10))
-                background = GradientDrawable().apply { setColor(CarWidgets.SURFACE); cornerRadius = dp(16).toFloat() }
+        gravity = Gravity.CENTER_VERTICAL
+        background = GradientDrawable().apply { setColor(0x1FFFFFFF); cornerRadius = dp(18).toFloat() }
+        setPadding(dp(16), dp(7), dp(16), dp(7))
+        addView(value)
+        if (unit != null) addView(TextView(context).apply {
+            text = unit
+            textSize = 15f
+            setTextColor(CarWidgets.MUTED)
+        }, wrap().apply { marginStart = dp(6) })
+    }
+
+    /** Previous, play or pause, next: sent as media keys, so they reach whatever is playing on the phone. */
+    private fun media() = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        val buttons = listOf(
+            Triple(CarArt.Symbol.PREVIOUS, KeyEvent.KEYCODE_MEDIA_PREVIOUS, false),
+            Triple(CarArt.Symbol.PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, true),
+            Triple(CarArt.Symbol.NEXT, KeyEvent.KEYCODE_MEDIA_NEXT, false),
+        )
+        for ((symbol, key, primary) in buttons) {
+            val size = dp(if (primary) 64 else 54)
+            addView(ImageView(context).apply {
+                setImageDrawable(CarArt.Glyph(symbol, if (primary) 0xFF04201D.toInt() else Color.WHITE))
+                val inset = size / 4
+                setPadding(inset, inset, inset, inset)
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(if (primary) CarWidgets.ACCENT else 0x24FFFFFF)
+                }
                 isClickable = true
                 setOnClickListener { mediaKey(key) }
-            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                marginStart = dp(6); marginEnd = dp(6)
-            })
+            }, LinearLayout.LayoutParams(size, size).apply { marginEnd = dp(14) })
         }
     }
 
@@ -133,84 +172,113 @@ class CarHomePresentation(
         audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, code))
     }
 
-    /** A card with the app's own icon where the phone has it, else a letter or symbol in a coloured disc. */
-    private fun tile(
-        name: String,
-        icon: android.graphics.drawable.Drawable?,
-        accent: Boolean = false,
-        symbol: String? = null,
-        onClick: () -> Unit,
-    ) = LinearLayout(context).apply {
+    // --- the grid of things to open ---
+
+    private class Entry(val name: String, val icon: Drawable?, val symbol: CarArt.Symbol?, val open: () -> Unit)
+
+    private fun entries(): List<Entry> {
+        val pm = context.packageManager
+        fun appIcon(pkg: String?) = pkg?.let { runCatching { pm.getApplicationIcon(it) }.getOrNull() }
+        val pages = listOf(
+            CarWebPresentation.Companion.Page("YouTube", CarWebPresentation.YOUTUBE),
+            CarWebPresentation.Companion.Page("Claude", CarWebPresentation.CLAUDE),
+        ) + CarWebPresentation.parsePages(AppSettings.carWebPages(context))
+        return buildList {
+            add(Entry(context.getString(R.string.car_android_auto), appIcon(GEARHEAD), null, onOpenAa))
+            for (page in pages) add(Entry(page.name, appIcon(CarWebPresentation.appFor(page.url)), null) { onOpenWeb(page.url) })
+            add(Entry(context.getString(R.string.car_apps), null, CarArt.Symbol.GRID, onOpenApps))
+            add(Entry(context.getString(R.string.car_phone_screen), null, CarArt.Symbol.PHONE, onOpenMirror))
+        }
+    }
+
+    private fun grid(): View {
+        val entries = entries()
+        val columns = columnsFor(entries.size)
+        return LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            for (rowEntries in entries.chunked(columns)) {
+                val row = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+                for (entry in rowEntries) row.addView(cell(entry), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                // A short last row keeps its icons in the same columns as the row above.
+                repeat(columns - rowEntries.size) { row.addView(View(context), LinearLayout.LayoutParams(0, 1, 1f)) }
+                addView(row, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+            }
+        }
+    }
+
+    /** One icon with its name under it; the whole cell is the button. */
+    private fun cell(entry: Entry) = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
-        gravity = Gravity.CENTER
-        background = GradientDrawable(
-            GradientDrawable.Orientation.TL_BR,
-            if (accent) intArrayOf(0xFF12A594.toInt(), 0xFF0B6F66.toInt()) else intArrayOf(0xFF1B2A32.toInt(), 0xFF121C22.toInt()),
-        ).apply {
-            cornerRadius = dp(26).toFloat()
-            setStroke(dp(1), if (accent) 0x5599F6E4 else 0x33FFFFFF)
-        }
-        if (icon != null) {
-            addView(android.widget.ImageView(context).apply { setImageDrawable(icon) }, LinearLayout.LayoutParams(dp(ICON_DP), dp(ICON_DP)))
+        gravity = Gravity.CENTER_HORIZONTAL
+        val size = dp(ICON_DP)
+        val corner = size * 0.24f
+        val icon: View = if (entry.icon != null) {
+            ImageView(context).apply {
+                setImageDrawable(entry.icon)
+                scaleType = ImageView.ScaleType.CENTER_CROP
+            }
         } else {
-            addView(TextView(context).apply {
-                text = symbol ?: name.take(1).uppercase()
-                textSize = 30f
-                setTextColor(Color.WHITE)
-                typeface = Typeface.DEFAULT_BOLD
-                gravity = Gravity.CENTER
-                background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(discColor(name)) }
-            }, LinearLayout.LayoutParams(dp(ICON_DP), dp(ICON_DP)))
+            FrameLayout(context).apply {
+                // Drawn rounded here as well as clipped below: the clip needs hardware drawing, this doesn't.
+                // Our own two tiles are a quiet slate, so the colour stays with the apps.
+                background = GradientDrawable(
+                    GradientDrawable.Orientation.TL_BR,
+                    if (entry.symbol != null) intArrayOf(0xFF475569.toInt(), 0xFF1E293B.toInt()) else CarArt.blendFor(entry.name),
+                ).apply { cornerRadius = corner }
+                if (entry.symbol != null) {
+                    addView(ImageView(context).apply { setImageDrawable(CarArt.Glyph(entry.symbol, Color.WHITE)) },
+                        FrameLayout.LayoutParams(size / 2, size / 2, Gravity.CENTER))
+                } else {
+                    addView(TextView(context).apply {
+                        text = entry.name.take(1).uppercase()
+                        textSize = 40f
+                        setTextColor(Color.WHITE)
+                        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+                        gravity = Gravity.CENTER
+                    })
+                }
+            }
         }
+        // Every icon gets the same rounded-square shape, whatever the app shipped.
+        icon.outlineProvider = object : ViewOutlineProvider() {
+            override fun getOutline(view: View, outline: Outline) = outline.setRoundRect(0, 0, view.width, view.height, corner)
+        }
+        icon.clipToOutline = true
+        icon.elevation = dp(6).toFloat()
+        addView(icon, LinearLayout.LayoutParams(size, size))
         addView(TextView(context).apply {
-            text = name
-            textSize = 18f
-            setTextColor(Color.WHITE)
-            typeface = Typeface.DEFAULT_BOLD
+            text = entry.name
+            textSize = 17f
+            setTextColor(0xF2FFFFFF.toInt())
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
             gravity = Gravity.CENTER
             maxLines = 1
-            ellipsize = android.text.TextUtils.TruncateAt.END
-            setPadding(dp(6), dp(10), dp(6), 0)
-        })
+            ellipsize = TextUtils.TruncateAt.END
+            setShadowLayer(6f, 0f, 2f, 0x99000000.toInt())
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
         isClickable = true
-        setOnClickListener { onClick() }
+        setOnClickListener { entry.open() }
     }
 
-    private fun tileParams() = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f).apply {
-        topMargin = dp(8); bottomMargin = dp(8)
+    private fun glass(radiusDp: Int) = GradientDrawable(
+        GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x1FFFFFFF, 0x0DFFFFFF),
+    ).apply {
+        cornerRadius = dp(radiusDp).toFloat()
+        setStroke(dp(1), 0x2EFFFFFF)
     }
 
-    private fun column(g: Int) = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; gravity = g }
-
-    private fun label(text: String, size: Float, color: Int, bold: Boolean = false) = TextView(context).apply {
-        this.text = text
-        textSize = size
-        setTextColor(color)
-        if (bold) typeface = Typeface.DEFAULT_BOLD
-    }
-
-    private fun clock(f12: String, f24: String, size: Float, color: Int, bold: Boolean = false) = TextClock(context).apply {
-        format12Hour = f12
-        format24Hour = f24
-        textSize = size
-        setTextColor(color)
-        if (bold) typeface = Typeface.DEFAULT_BOLD
-    }
-
-    private fun gap(top: Int) = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        .apply { topMargin = dp(top) }
-
-    companion object {
-        const val TILES_PER_ROW = 4
-        private const val ICON_DP = 64
-        private const val GEARHEAD = "com.google.android.projection.gearhead"
-        private val DISCS = intArrayOf(0xFF2563EB.toInt(), 0xFF7C3AED.toInt(), 0xFFDB2777.toInt(), 0xFFEA580C.toInt(), 0xFF059669.toInt(), 0xFF0891B2.toInt())
-
-        /** The same name always gets the same colour. */
-        fun discColor(name: String): Int = DISCS[Math.floorMod(name.hashCode(), DISCS.size)]
-    }
+    private fun wrap() = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
 
     private fun dp(v: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), context.resources.displayMetrics).toInt()
+
+    companion object {
+        private const val ICON_DP = 108
+        private const val GEARHEAD = "com.google.android.projection.gearhead"
+
+        /** Four across, as on a phone, until there are more than two rows' worth; then five. */
+        fun columnsFor(count: Int): Int = if (count > 8) 5 else 4
+    }
 }
 
 /** Colours and small pieces the car screens share. */

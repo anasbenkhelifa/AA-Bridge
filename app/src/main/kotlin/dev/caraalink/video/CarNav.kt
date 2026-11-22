@@ -1,7 +1,6 @@
 package dev.caraalink.video
 
 import android.content.Context
-import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.util.TypedValue
 import android.view.Gravity
@@ -9,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
-import android.widget.TextView
 
 /**
  * The way out of every car screen. Some cars keep their own Back and Home
@@ -40,14 +38,12 @@ object CarNav {
     fun buttons(onHome: () -> Unit, onBack: (() -> Unit)?): List<Pair<String, () -> Unit>> =
         listOfNotNull(onBack?.let { BACK to it }, HOME to onHome)
 
-    private fun button(context: Context, symbol: String, action: () -> Unit): View = TextView(context).apply {
-        text = symbol
-        textSize = 26f
-        setTextColor(CarWidgets.TEXT)
-        typeface = Typeface.DEFAULT_BOLD
-        gravity = Gravity.CENTER
-        minWidth = dp(context, 52)
-        minHeight = dp(context, 52)
+    private fun button(context: Context, symbol: String, action: () -> Unit): View = android.widget.ImageView(context).apply {
+        setImageDrawable(CarArt.Glyph(if (symbol == BACK) CarArt.Symbol.BACK else CarArt.Symbol.HOME, CarWidgets.TEXT))
+        val inset = dp(context, 13)
+        setPadding(inset, inset, inset, inset)
+        minimumWidth = dp(context, 52)
+        minimumHeight = dp(context, 52)
         isClickable = true
         setOnClickListener { action() }
     }

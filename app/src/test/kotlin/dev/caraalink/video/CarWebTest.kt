@@ -86,7 +86,10 @@ class CarWebTest {
     }
 
     @Test
-    fun `a tile without an icon keeps one colour per name`() {
-        assertEquals(CarHomePresentation.discColor("Tarteel"), CarHomePresentation.discColor("Tarteel"))
+    fun `a drawn icon keeps one colour blend per name, and the grid grows a column past eight`() {
+        assertEquals(CarArt.blendFor("Tarteel").toList(), CarArt.blendFor("Tarteel").toList())
+        assertEquals(4, CarHomePresentation.columnsFor(7))
+        assertEquals(4, CarHomePresentation.columnsFor(8))
+        assertEquals(5, CarHomePresentation.columnsFor(9))
     }
 }
