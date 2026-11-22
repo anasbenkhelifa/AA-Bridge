@@ -154,7 +154,8 @@ private fun BluetoothConnectRow() {
             onDismissRequest = { choices = null },
             title = { Text(stringResource(R.string.bt_pick_title)) },
             text = {
-                Column {
+                // Ten actions, or a long list of paired devices, don't fit a small phone.
+                Column(Modifier.verticalScroll(rememberScrollState())) {
                     if (list.isEmpty()) Text(stringResource(R.string.bt_pick_empty))
                     for (choice in list) {
                         ListItem(

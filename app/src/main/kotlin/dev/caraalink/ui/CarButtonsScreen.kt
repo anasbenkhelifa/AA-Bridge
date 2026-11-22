@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -122,7 +124,8 @@ fun CarButtonsScreen(onBack: () -> Unit) {
             onDismissRequest = { editing = null },
             title = { Text(buttonName(key)) },
             text = {
-                Column {
+                // Ten actions, or a long list of paired devices, don't fit a small phone.
+                Column(Modifier.verticalScroll(rememberScrollState())) {
                     for (action in CarKeyAction.values()) {
                         ListItem(
                             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
