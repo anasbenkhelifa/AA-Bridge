@@ -74,7 +74,11 @@ class AaSessionProbe(
     private val video = AaVideoChannel(logger::log)
     private val audio = AaAudioChannel(context, config.preview, logger::log)
     private val mic = AaMicChannel(context, logger::log)
-    private val sensors = AaSensorChannel({ NightMode.current(context) }, logger::log)
+    private val sensors = AaSensorChannel(
+        night = { NightMode.current(context) },
+        motion = { if (dev.caraalink.settings.AppSettings.parkedDetection(context)) dev.caraalink.link.CarMotion.motion() else null },
+        log = logger::log,
+    )
     private val input = AaInputChannel(logger::log)
     private val channels: Map<Int, AaChannel> = listOf(video, audio, mic, sensors, input).associateBy { it.channelId }
 

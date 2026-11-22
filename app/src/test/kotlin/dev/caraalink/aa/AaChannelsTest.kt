@@ -1,5 +1,6 @@
 package dev.caraalink.aa
 
+import dev.caraalink.link.Motion
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -161,7 +162,7 @@ class AaChannelsTest {
 
     @Test
     fun `a night mode request is accepted and answered with the current state`() {
-        val sensors = AaSensorChannel(night = { true }, log = log, now = { 0L })
+        val sensors = AaSensorChannel(night = { true }, motion = { null }, log = log, now = { 0L })
         sensors.onSessionStart(link)
 
         sensors.onMessage(link, AaFraming.MSG_SENSOR_REQUEST, sensorRequest(AaServiceDiscovery.SENSOR_NIGHT_MODE))
@@ -175,7 +176,7 @@ class AaChannelsTest {
     fun `night mode is sent again only when it changes, checked every five seconds`() {
         var night = false
         var clock = 0L
-        val sensors = AaSensorChannel(night = { night }, log = log, now = { clock })
+        val sensors = AaSensorChannel(night = { night }, motion = { null }, log = log, now = { clock })
         sensors.onSessionStart(link)
         sensors.onMessage(link, AaFraming.MSG_SENSOR_REQUEST, sensorRequest(AaServiceDiscovery.SENSOR_NIGHT_MODE))
         link.sent.clear()
@@ -196,7 +197,7 @@ class AaChannelsTest {
 
     @Test
     fun `nothing is sent while day or night is unknown, or before the phone asks`() {
-        val sensors = AaSensorChannel(night = { null }, log = log, now = { 10_000L })
+        val sensors = AaSensorChannel(night = { null }, motion = { null }, log = log, now = { 10_000L })
         sensors.onSessionStart(link)
         sensors.onIdle(link)
         assertTrue(link.sent.isEmpty())
@@ -208,7 +209,7 @@ class AaChannelsTest {
 
     @Test
     fun `a new session forgets what the last one was told`() {
-        val sensors = AaSensorChannel(night = { true }, log = log, now = { 0L })
+        val sensors = AaSensorChannel(night = { true }, motion = { null }, log = log, now = { 0L })
         sensors.onSessionStart(link)
         sensors.onMessage(link, AaFraming.MSG_SENSOR_REQUEST, sensorRequest(AaServiceDiscovery.SENSOR_NIGHT_MODE))
         link.sent.clear()
@@ -217,6 +218,70 @@ class AaChannelsTest {
         sensors.onMessage(link, AaFraming.MSG_SENSOR_REQUEST, sensorRequest(AaServiceDiscovery.SENSOR_NIGHT_MODE))
 
         assertEquals(listOf(AaFraming.MSG_SENSOR_RESPONSE, AaFraming.MSG_SENSOR_EVENT), link.ids())
+    }
+
+    private fun drivingOf(sent: FakeLink.Sent): Long? =
+        AaProtobuf.parse(sent.body).firstOrNull { it.number == 13 }?.bytes?.field(1)
+
+    @Test
+    fun `a stopped car is reported unrestricted, and restricted again once it moves`() {
+        var motion: Motion? = Motion.PARKED
+        var clock = 0L
+        val sensors = AaSensorChannel(night = { null }, motion = { motion }, log = log, now = { clock })
+        sensors.onSessionStart(link)
+
+        sensors.onMessage(link, AaFraming.MSG_SENSOR_REQUEST, sensorRequest(AaServiceDiscovery.SENSOR_DRIVING_STATUS_DATA))
+        assertEquals(listOf(AaFraming.MSG_SENSOR_RESPONSE, AaFraming.MSG_SENSOR_EVENT), link.ids())
+        assertEquals(0L, drivingOf(link.sent[1]))
+        link.sent.clear()
+
+        motion = Motion.MOVING
+        clock = 501
+        sensors.onIdle(link)
+        // No video, no keyboard, no setup, short messages; voice stays allowed.
+        assertEquals(27L, drivingOf(link.sent.single()))
+
+        clock = 1_100
+        sensors.onIdle(link)
+        assertEquals(1, link.sent.size)
+    }
+
+    @Test
+    fun `with no GPS nothing is said about driving, so Android Auto keeps its own default`() {
+        val sensors = AaSensorChannel(night = { null }, motion = { Motion.UNKNOWN }, log = log, now = { 0L })
+        sensors.onSessionStart(link)
+
+        sensors.onMessage(link, AaFraming.MSG_SENSOR_REQUEST, sensorRequest(AaServiceDiscovery.SENSOR_DRIVING_STATUS_DATA))
+
+        assertEquals(listOf(AaFraming.MSG_SENSOR_RESPONSE), link.ids())
+    }
+
+    @Test
+    fun `losing GPS, or switching reporting off, never leaves parked standing`() {
+        for (after in listOf<Motion?>(Motion.UNKNOWN, null)) {
+            link.sent.clear()
+            var motion: Motion? = Motion.PARKED
+            var clock = 0L
+            val sensors = AaSensorChannel(night = { null }, motion = { motion }, log = log, now = { clock })
+            sensors.onSessionStart(link)
+            sensors.onMessage(link, AaFraming.MSG_SENSOR_REQUEST, sensorRequest(AaServiceDiscovery.SENSOR_DRIVING_STATUS_DATA))
+
+            motion = after
+            clock = 600
+            sensors.onIdle(link)
+
+            assertEquals(27L, drivingOf(link.sent.last()))
+        }
+    }
+
+    @Test
+    fun `driving status waits for the phone to ask`() {
+        val sensors = AaSensorChannel(night = { null }, motion = { Motion.PARKED }, log = log, now = { 10_000L })
+        sensors.onSessionStart(link)
+
+        sensors.onIdle(link)
+
+        assertTrue(link.sent.isEmpty())
     }
 
     // --- input ---

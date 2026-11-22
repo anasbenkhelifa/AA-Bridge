@@ -26,4 +26,15 @@ class LinkPolicyTest {
         assertEquals(dev.caraalink.connection.WirelessPhase.FAILED, UsbLinkForegroundService.afterFailedAttempt(reconnectUntil = 120_000, now = 120_001))
         assertEquals(dev.caraalink.connection.WirelessPhase.FAILED, UsbLinkForegroundService.afterFailedAttempt(reconnectUntil = 0, now = 5_000))
     }
+
+    @Test
+    fun foregroundTypesAreDroppedOneAtATime() {
+        val mic = 128
+        val location = 8
+        assertEquals(listOf(mic or location, mic, location), UsbLinkForegroundService.foregroundTypeLadder(mic, location))
+        // A missing permission leaves nothing to drop twice.
+        assertEquals(listOf(mic), UsbLinkForegroundService.foregroundTypeLadder(mic, 0))
+        assertEquals(listOf(location), UsbLinkForegroundService.foregroundTypeLadder(0, location))
+        assertEquals(emptyList<Int>(), UsbLinkForegroundService.foregroundTypeLadder(0, 0))
+    }
 }

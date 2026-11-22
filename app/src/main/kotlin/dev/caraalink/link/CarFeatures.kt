@@ -21,7 +21,7 @@ import org.json.JSONObject
 class CarFeatures(private val context: Context) {
 
     @Volatile private var last: Location? = null
-    private val listener = LocationListener { last = it }
+    private val listener = LocationListener { last = it; CarMotion.onLocation(it) }
     private var started = false
 
     fun start() {
@@ -40,6 +40,7 @@ class CarFeatures(private val context: Context) {
     fun stop() {
         if (!started) return
         runCatching { context.getSystemService(LocationManager::class.java).removeUpdates(listener) }
+        CarMotion.reset()
         started = false
     }
 

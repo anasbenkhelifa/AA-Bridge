@@ -290,26 +290,37 @@ class UsbLinkForegroundService : Service() {
     }
 
     /**
-     * Android 14 refuses a microphone-typed start from the background (transport reconnects run there),
-     * so fall back to connectedDevice alone rather than failing the session.
+     * Goes foreground with the microphone and location types where it can.
+     * Location keeps GPS coming with the app in the background: Wi-Fi Direct
+     * scans need it up to Android 12, and parked detection and night mode
+     * need it on every version. Android 14 refuses both types to a start from
+     * the background (a transport reconnect, a Bluetooth-triggered connect),
+     * so they are dropped rather than failing the session.
      */
-    private fun startForegroundWithMic(wireless: Boolean = false) {
+    private fun startForegroundWithMic() {
         val notification = buildNotification(ConnectionStateHolder.snapshot)
         val micGranted = checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
-        // Wi-Fi Direct scans count as location access up to Android 12, so a reconnect mid-drive needs this type.
-        val location = if (wireless && needsLocationForWifiDirect() && hasFineLocation()) ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0
         // The microphone type only exists from Android 11; on 10 it's an undeclared type and throws.
-        if (micGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val mic = if (micGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE else 0
+        val location = if (hasLocation()) ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0
+        for (extra in foregroundTypeLadder(mic, location)) {
             try {
-                startForeground(NOTIFICATION_ID, notification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or location)
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or extra)
+                foregroundExtras = extra
                 return
             } catch (e: SecurityException) {
-                Log.w(TAG, "startForeground with microphone refused -- retrying connectedDevice only", e)
+                Log.w(TAG, "startForeground with extra types $extra refused -- retrying with fewer", e)
             }
         }
-        startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or location)
+        startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+        foregroundExtras = 0
     }
+
+    /** The microphone and location types the service currently holds. */
+    private var foregroundExtras = 0
+
+    private fun hasLocation() = hasFineLocation() ||
+        checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
     private fun needsLocationForWifiDirect() = Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2
 
@@ -320,7 +331,7 @@ class UsbLinkForegroundService : Service() {
 
     private fun beginWireless(target: RememberedCar?) {
         // startForegroundService needs startForeground even when there turns out to be nothing to do.
-        startForegroundWithMic(wireless = true)
+        startForegroundWithMic()
         if (target == null || ConnectionStateHolder.snapshot.link == CarLink.CABLE) {
             wirelessLog.log("start wireless ignored: ${if (target == null) "no car" else "cable session active"}")
             if (session == null) stopSelfCleanly()
@@ -649,6 +660,10 @@ class UsbLinkForegroundService : Service() {
         /** A session that just failed stops the service; a leftover ERROR seen by a later update must not. */
         internal fun shouldStopOnError(previous: ConnectionPhase?, snapshot: ConnectionSnapshot): Boolean =
             snapshot.phase == ConnectionPhase.ERROR && previous != ConnectionPhase.ERROR && snapshot.link != CarLink.WIRELESS
+
+        /** The extra foreground types to try, most first; the caller falls back to none. */
+        internal fun foregroundTypeLadder(mic: Int, location: Int): List<Int> =
+            listOf(mic or location, mic, location).filter { it != 0 }.distinct()
 
         /** Null keeps trying: inside the mid-drive window a failed attempt goes back to scanning. */
         internal fun afterFailedAttempt(reconnectUntil: Long, now: Long): WirelessPhase? =

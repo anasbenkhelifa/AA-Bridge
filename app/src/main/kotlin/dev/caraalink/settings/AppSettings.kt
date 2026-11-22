@@ -171,6 +171,15 @@ object AppSettings {
             else -> AaAudioRoute.PHONE_DIRECT
         }
 
+    /**
+     * Reports the car as parked to Android Auto only while GPS shows it
+     * stopped (dev.caraalink.link.ParkDetector), and as driving the rest of
+     * the time. Off sends no driving status at all, as before this existed.
+     * There is deliberately no "always parked" choice.
+     */
+    fun parkedDetection(context: Context): Boolean =
+        prefs(context).getBoolean("aa_parked_detection", true)
+
     fun updateAutoCheck(context: Context): Boolean =
         prefs(context).getBoolean("update_auto_check", true)
 }

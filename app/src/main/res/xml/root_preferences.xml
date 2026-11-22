@@ -86,6 +86,11 @@
             android:entryValues="@array/aa_audio_route_values"
             android:defaultValue="phone_direct" />
         <SwitchPreferenceCompat
+            android:key="aa_parked_detection"
+            android:title="Parked detection"
+            android:summary="Tell Android Auto the car is parked only while GPS shows it stopped, so the keyboard and parked-only apps work then. While moving, or without a GPS fix, the normal driving limits apply. Needs location allowed."
+            android:defaultValue="true" />
+        <SwitchPreferenceCompat
             android:key="aa_auto_crop"
             android:title="Auto-crop to car screen shape"
             android:summary="Computes the AA video crop automatically from this car's real screen size, instead of a plain letterbox. Turn off if the picture looks worse than Fit/Fill alone."
