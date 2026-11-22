@@ -82,6 +82,8 @@ class UsbLinkForegroundService : Service() {
     private var connectingTo: String? = null
     private var carHost: Pair<String, InetAddress?>? = null
     private var wirelessStreamed = false
+    /** The search was started by the car's Bluetooth connecting, not by the driver. */
+    private var autoSearch = false
     private var wirelessTimeout: Runnable? = null
     private var reconnectUntil = 0L
 
@@ -359,12 +361,9 @@ class UsbLinkForegroundService : Service() {
         }
         startWirelessSession()
         wirelessLink = WirelessLink(this, wirelessLog, wirelessListener).also { it.scan() }
+        autoSearch = auto
         // The head unit is still booting when Bluetooth connects, and the driver has yet to open its phone-link page.
-        if (auto) {
-            armWirelessTimeout(AUTO_SEARCH_TIMEOUT_MS) { endWireless(WirelessPhase.IDLE) }
-        } else {
-            armWirelessTimeout(SEARCH_TIMEOUT_MS) { endWireless(WirelessPhase.NOT_FOUND) }
-        }
+        armWirelessTimeout(if (auto) AUTO_SEARCH_TIMEOUT_MS else SEARCH_TIMEOUT_MS) { endWireless(WirelessPhase.NOT_FOUND) }
     }
 
     private fun startWirelessSession() {
@@ -484,7 +483,8 @@ class UsbLinkForegroundService : Service() {
 
     private fun endWireless(phase: WirelessPhase) {
         wirelessLog.log("wireless ended: $phase")
-        ConnectionStateHolder.update { it.copy(wireless = phase) }
+        val shown = phaseToShow(phase, autoSearch, wirelessStreamed)
+        ConnectionStateHolder.update { it.copy(wireless = shown) }
         stopping = true
         stopSelfCleanly()
     }
@@ -690,6 +690,10 @@ class UsbLinkForegroundService : Service() {
         /** A session that just failed stops the service; a leftover ERROR seen by a later update must not. */
         internal fun shouldStopOnError(previous: ConnectionPhase?, snapshot: ConnectionSnapshot): Boolean =
             snapshot.phase == ConnectionPhase.ERROR && previous != ConnectionPhase.ERROR && snapshot.link != CarLink.WIRELESS
+
+        /** A search nobody asked for that never reached the car ends without an error on Home. */
+        internal fun phaseToShow(phase: WirelessPhase, autoSearch: Boolean, streamed: Boolean): WirelessPhase =
+            if (autoSearch && !streamed && (phase == WirelessPhase.NOT_FOUND || phase == WirelessPhase.FAILED)) WirelessPhase.IDLE else phase
 
         /** The extra foreground types to try, most first; the caller falls back to none. */
         internal fun foregroundTypeLadder(mic: Int, location: Int): List<Int> =

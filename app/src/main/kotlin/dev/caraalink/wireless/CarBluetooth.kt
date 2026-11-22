@@ -45,6 +45,15 @@ object CarBluetooth {
     internal fun shouldStart(carAddress: String?, connectedAddress: String?, canConnect: Boolean): Boolean =
         carAddress != null && carAddress.equals(connectedAddress, ignoreCase = true) && canConnect
 
+    /**
+     * Whether a search started from the background can find the car. Up to
+     * Android 12L a Wi-Fi Direct scan counts as location access, and from
+     * Android 11 a service started from the background gets none, so on 11
+     * to 12L the scan would run for nothing: there the driver is asked for a
+     * tap instead.
+     */
+    internal fun canSearchFromBackground(sdk: Int): Boolean = sdk < Build.VERSION_CODES.R || sdk >= Build.VERSION_CODES.TIRAMISU
+
     /** Paired devices can be read without asking up to Android 11; from 12 it takes Nearby devices. */
     fun hasPermission(context: Context): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
         context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
@@ -76,6 +85,11 @@ class CarBluetoothReceiver : BroadcastReceiver() {
         if (!CarBluetooth.shouldStart(car.address, device?.address, canConnect)) return
 
         val log = DiagnosticLogger(context, "wireless")
+        if (!CarBluetooth.canSearchFromBackground(Build.VERSION.SDK_INT)) {
+            log.log("car Bluetooth connected -- this Android version can't scan from the background, asking for a tap")
+            notifyTapToConnect(context, wirelessCar?.name ?: car.name)
+            return
+        }
         log.log("car Bluetooth connected -- starting the wireless search")
         val start = Intent(context, UsbLinkForegroundService::class.java)
             .setAction(UsbLinkForegroundService.ACTION_START_WIRELESS)

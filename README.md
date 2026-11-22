@@ -62,7 +62,7 @@ In the app's Settings:
 
 - **Sharper picture:** draws Android Auto at 1080p instead of 720p. It looks crisper on wide car screens and works the phone harder. If the phone reports severe heat, Android Auto restarts once at 720p and stays there for the rest of the drive.
 - **Car buttons:** while connected, press a button on the car or the steering wheel. It appears in the list, and you choose what it does: back, home, voice assistant, play or pause, next, previous, answer, end call, or close Android Auto. Back goes back and Home closes Android Auto until you change them. Buttons that already work through the car's Bluetooth don't need setting.
-- **Connect when I get in the car:** appears once a car is remembered for wireless. Choose the car from your paired Bluetooth devices, and the wireless connection starts when the phone joins it. Android does not give the microphone or location to a connection started this way, so open AA Bridge once during the drive if the voice button can't hear you.
+- **Connect when I get in the car:** appears once a car is remembered for wireless. Choose the car from your paired Bluetooth devices, and the wireless connection starts when the phone joins it. Android does not give the microphone or location to a connection started this way, so open AA Bridge once during the drive if the voice button can't hear you. On Android 11 and 12 a connection started this way can't scan for the car at all, so a notification asks for one tap instead.
 
 Under Advanced:
 

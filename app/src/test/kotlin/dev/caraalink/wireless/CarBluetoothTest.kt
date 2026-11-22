@@ -38,4 +38,13 @@ class CarBluetoothTest {
 
         assertEquals(listOf(handsFree, carKit, watch, earbuds), CarBluetooth.carsFirst(listOf(earbuds, watch, carKit, handsFree)))
     }
+
+    @Test
+    fun `Android 11 to 12L ask for a tap, since a background start can't scan for the car there`() {
+        assertTrue(CarBluetooth.canSearchFromBackground(29))
+        assertFalse(CarBluetooth.canSearchFromBackground(30))
+        assertFalse(CarBluetooth.canSearchFromBackground(32))
+        assertTrue(CarBluetooth.canSearchFromBackground(33))
+        assertTrue(CarBluetooth.canSearchFromBackground(34))
+    }
 }

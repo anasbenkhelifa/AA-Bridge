@@ -37,4 +37,18 @@ class LinkPolicyTest {
         assertEquals(listOf(location), UsbLinkForegroundService.foregroundTypeLadder(0, location))
         assertEquals(emptyList<Int>(), UsbLinkForegroundService.foregroundTypeLadder(0, 0))
     }
+
+    @Test
+    fun anAutoSearchThatNeverReachedTheCarEndsQuietly() {
+        val notFound = dev.caraalink.connection.WirelessPhase.NOT_FOUND
+        val failed = dev.caraalink.connection.WirelessPhase.FAILED
+        val idle = dev.caraalink.connection.WirelessPhase.IDLE
+        assertEquals(idle, UsbLinkForegroundService.phaseToShow(notFound, autoSearch = true, streamed = false))
+        assertEquals(idle, UsbLinkForegroundService.phaseToShow(failed, autoSearch = true, streamed = false))
+        // The driver's own search, and a drive that was up and then failed, still say so.
+        assertEquals(notFound, UsbLinkForegroundService.phaseToShow(notFound, autoSearch = false, streamed = false))
+        assertEquals(failed, UsbLinkForegroundService.phaseToShow(failed, autoSearch = true, streamed = true))
+        val wifiOff = dev.caraalink.connection.WirelessPhase.WIFI_OFF
+        assertEquals(wifiOff, UsbLinkForegroundService.phaseToShow(wifiOff, autoSearch = true, streamed = false))
+    }
 }
