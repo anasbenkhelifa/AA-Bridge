@@ -42,6 +42,14 @@ object AaProtobuf {
 
         fun message(field: Int, body: ByteArray): Writer = bytes(field, body)
 
+        /** A `[packed = true]` repeated varint field: every value in one length-delimited run. Nothing is written for an empty list. */
+        fun packed(field: Int, values: List<Int>): Writer {
+            if (values.isEmpty()) return this
+            val run = Writer()
+            values.forEach { run.rawVarint(it.toLong()) }
+            return bytes(field, run.build())
+        }
+
         fun build(): ByteArray = out.toByteArray()
 
         private fun tag(field: Int, wireType: Int) = rawVarint(((field shl 3) or wireType).toLong())

@@ -320,11 +320,11 @@ object AaServiceDiscovery {
             .int(2, config.touchHeight)
             .build()
 
-        // keycodes_supported is a plain (unpacked) repeated field in aasdk's
+        // `repeated int32 keycodes_supported = 1 [packed = true]` in aasdk's
         // InputSourceService.proto; openauto's InputService::fillFeatures()
-        // lists its buttons the same way, next to the touchscreen.
+        // lists its buttons there, next to the touchscreen.
         val inputSource = AaProtobuf.Writer()
-            .apply { config.keycodes.forEach { int(1, it) } } // keycodes_supported (repeated)
+            .packed(1, config.keycodes)              // keycodes_supported (repeated, packed)
             .message(2, touchscreen)                 // touchscreen (repeated)
             .build()
 

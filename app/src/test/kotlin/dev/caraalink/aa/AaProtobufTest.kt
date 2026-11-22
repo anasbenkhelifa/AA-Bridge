@@ -21,6 +21,14 @@ class AaProtobufTest {
     }
 
     @Test
+    fun `packed field encodes tag, byte length, then the values back to back`() {
+        // field 1, wire type 2 -> tag byte 0x0A; 3 is one byte and 300 is two
+        val bytes = AaProtobuf.Writer().packed(1, listOf(3, 300)).build()
+        assertEquals("0A 03 03 AC 02", hex(bytes))
+        assertEquals(0, AaProtobuf.Writer().packed(1, emptyList()).build().size)
+    }
+
+    @Test
     fun `varint field encodes tag then value`() {
         // field 1, wire type 0 -> tag byte 0x08
         val bytes = AaProtobuf.Writer().int(1, 300).build()

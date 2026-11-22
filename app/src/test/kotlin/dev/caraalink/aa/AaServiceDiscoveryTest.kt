@@ -59,9 +59,22 @@ class AaServiceDiscoveryTest {
             .first { svc -> svc.first { it.number == 1 }.varint == AaServiceDiscovery.CHANNEL_INPUT_SOURCE.toLong() }
         val source = AaProtobuf.parse(inputService.first { it.number == 4 }.bytes!!)
 
-        assertEquals(listOf(4L, 84L, 87L), source.filter { it.number == 1 }.map { it.varint })
+        // Packed, as the proto declares it: one length-delimited field holding the varints back to back.
+        val packed = source.single { it.number == 1 }
+        assertEquals(AaProtobuf.WIRE_LENGTH, packed.wireType)
+        assertEquals(listOf(4, 84, 87), packed.bytes!!.map { it.toInt() })
         val touchscreen = AaProtobuf.parse(source.single { it.number == 2 }.bytes!!)
         assertEquals(1920L to 720L, touchscreen.first { it.number == 1 }.varint to touchscreen.first { it.number == 2 }.varint)
+    }
+
+    @Test
+    fun `with no buttons to offer, the input source has no key code field at all`() {
+        val response = AaProtobuf.parse(AaServiceDiscovery.build(AaServiceDiscovery.Config(keycodes = emptyList())))
+        val inputService = response.filter { it.number == 1 }.map { AaProtobuf.parse(it.bytes!!) }
+            .first { svc -> svc.first { it.number == 1 }.varint == AaServiceDiscovery.CHANNEL_INPUT_SOURCE.toLong() }
+        val source = AaProtobuf.parse(inputService.first { it.number == 4 }.bytes!!)
+
+        assertEquals(listOf(2), source.map { it.number })
     }
 
     @Test
