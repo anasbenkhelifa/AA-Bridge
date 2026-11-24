@@ -104,6 +104,39 @@ class AaChannelsTest {
         assertFalse(AaVideoChannel.containsIdr(pFrame))
     }
 
+    @Test
+    fun `leaving the car screen takes video focus away, and coming back asks for the picture again`() {
+        val video = AaVideoChannel(log, DirectExecutor())
+        video.onSessionStart(link)
+
+        video.setFocus(true) // already on screen: nothing to say
+        assertTrue(link.sent.isEmpty())
+
+        video.setFocus(false)
+        video.setFocus(false)
+        video.setFocus(true)
+
+        assertEquals(listOf(AaFraming.MSG_MEDIA_VIDEO_FOCUS_NOTIFICATION, AaFraming.MSG_MEDIA_VIDEO_FOCUS_NOTIFICATION), link.ids())
+        assertEquals(listOf(2L, 1L), link.sent.map { it.body.field(1) }) // NATIVE, then PROJECTED
+        assertEquals(listOf(1L, 1L), link.sent.map { it.body.field(2) }) // unsolicited
+    }
+
+    @Test
+    fun `video focus is not sent without a session, and a new session starts on screen`() {
+        val video = AaVideoChannel(log, DirectExecutor())
+        video.setFocus(false)
+        assertTrue(link.sent.isEmpty())
+
+        video.onSessionStart(link)
+        video.setFocus(false)
+        video.onSessionEnd()
+        video.onSessionStart(link)
+        link.sent.clear()
+        video.setFocus(true)
+
+        assertTrue(link.sent.isEmpty())
+    }
+
     // --- audio ---
 
     @Test

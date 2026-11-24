@@ -117,7 +117,40 @@ internal class AaVideoChannel(
             .onFailure { log("AV_MEDIA_ACK send failed on ch$channelId: $it") }
     }
 
+    @Volatile
+    private var link: AaLink? = null
+
+    @Volatile
+    private var projected = true
+
+    override fun onSessionStart(link: AaLink) {
+        this.link = link
+        projected = true
+    }
+
+    /**
+     * Tells the phone whether its picture is on the car screen right now.
+     * `VideoFocusNotification{focus = PROJECTED(1) | NATIVE(2), unsolicited =
+     * true}` is how a head unit says it is showing something of its own: the
+     * phone stops sending video and keeps everything else running, so
+     * navigation and its voice carry on, and it starts again with a fresh
+     * keyframe when focus comes back. No-op without a session or a change.
+     */
+    fun setFocus(onScreen: Boolean) {
+        val link = link ?: return
+        if (projected == onScreen) return
+        projected = onScreen
+        if (onScreen) startGrace()
+        decodeExecutor.execute {
+            val focus = AaProtobuf.Writer().int(1, if (onScreen) FOCUS_PROJECTED else FOCUS_NATIVE).bool(2, true).build()
+            runCatching { link.sendChannelSpecific(channelId, AaFraming.MSG_MEDIA_VIDEO_FOCUS_NOTIFICATION, focus) }
+                .onFailure { log("VIDEO_FOCUS send failed: $it") }
+            log("TX VIDEO_FOCUS ${if (onScreen) "projected" else "native"}")
+        }
+    }
+
     override fun onSessionEnd() {
+        link = null
         cachedCodecConfig = null
         cachedKeyframe = null
     }
@@ -128,6 +161,8 @@ internal class AaVideoChannel(
 
     companion object {
         const val MAX_UNACKED = 10
+        const val FOCUS_PROJECTED = 1
+        const val FOCUS_NATIVE = 2
 
         /** True if [nal] (one or more Annex-B NAL units) contains an IDR slice (type 5). */
         fun containsIdr(nal: ByteArray): Boolean {

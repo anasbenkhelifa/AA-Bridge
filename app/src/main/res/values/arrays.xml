@@ -60,6 +60,31 @@
         <item>phone_direct</item>
     </string-array>
 
+    <string-array name="prayer_method_entries">
+        <item>Muslim World League (Fajr 18°, Isha 17°)</item>
+        <item>Egyptian General Authority</item>
+        <item>Umm al-Qura, Makkah</item>
+        <item>University of Islamic Sciences, Karachi</item>
+        <item>North America (ISNA)</item>
+        <item>Dubai</item>
+        <item>Kuwait</item>
+        <item>Qatar</item>
+        <item>Singapore</item>
+        <item>Moonsighting Committee</item>
+    </string-array>
+    <string-array name="prayer_method_values">
+        <item>MUSLIM_WORLD_LEAGUE</item>
+        <item>EGYPTIAN</item>
+        <item>UMM_AL_QURA</item>
+        <item>KARACHI</item>
+        <item>NORTH_AMERICA</item>
+        <item>DUBAI</item>
+        <item>KUWAIT</item>
+        <item>QATAR</item>
+        <item>SINGAPORE</item>
+        <item>MOON_SIGHTING_COMMITTEE</item>
+    </string-array>
+
     <!--
       USB role is CONFIRMED (see claude/roadmap.md): phone is the accessory,
       head unit is the host. This override exists for debugging only — do

@@ -30,8 +30,8 @@ import dev.caraalink.service.UsbLinkForegroundService
  * app, a chat) can reach the car one way: capture the phone's screen with
  * MediaProjection and draw that. The phone has to stay on and show the app.
  *
- * Touch goes back through the Shizuku helper (dev.caraalink.shell) when the
- * driver has set that up; without it the picture still shows.
+ * It is a picture only. Touching another app takes rights an ordinary app is
+ * never given, so the phone is worked by hand.
  */
 object PhoneMirror {
     private const val MAX_SIDE = 1280
@@ -67,10 +67,6 @@ object PhoneMirror {
         if (long <= maxSide) return (width and 1.inv()) to (height and 1.inv())
         return (width * maxSide / long and 1.inv()) to (height * maxSide / long and 1.inv())
     }
-
-    /** A point on the mirrored picture, as fractions of it, in phone pixels. */
-    internal fun toPhone(fx: Float, fy: Float, phoneWidth: Int, phoneHeight: Int): Pair<Float, Float> =
-        (fx.coerceIn(0f, 1f) * (phoneWidth - 1)) to (fy.coerceIn(0f, 1f) * (phoneHeight - 1))
 
     private val displayListener = object : DisplayManager.DisplayListener {
         override fun onDisplayAdded(displayId: Int) {}

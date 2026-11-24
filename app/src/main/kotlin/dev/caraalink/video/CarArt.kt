@@ -41,7 +41,7 @@ object CarArt {
         override fun getOpacity() = PixelFormat.OPAQUE
     }
 
-    enum class Symbol { PREVIOUS, PLAY_PAUSE, NEXT, GRID, PHONE, HOME, BACK }
+    enum class Symbol { PREVIOUS, PLAY_PAUSE, NEXT, GRID, PHONE, HOME, BACK, MIC }
 
     /** [symbol] in one colour, drawn to fill the middle of whatever it is given. */
     class Glyph(private val symbol: Symbol, color: Int) : Drawable() {
@@ -86,6 +86,11 @@ object CarArt {
                     canvas.drawPath(roof, stroke)
                     val walls = Path().apply { moveTo(6f, 10.5f); lineTo(6f, 19.5f); lineTo(18f, 19.5f); lineTo(18f, 10.5f) }
                     canvas.drawPath(walls, stroke)
+                }
+                Symbol.MIC -> {
+                    canvas.drawRoundRect(RectF(9.2f, 3.5f, 14.8f, 13.5f), 2.8f, 2.8f, fill)
+                    val cup = Path().apply { moveTo(6f, 11f); cubicTo(6f, 19f, 18f, 19f, 18f, 11f); moveTo(12f, 17f); lineTo(12f, 20.5f) }
+                    canvas.drawPath(cup, stroke)
                 }
                 Symbol.BACK -> {
                     val arrow = Path().apply { moveTo(20f, 12f); lineTo(5f, 12f); moveTo(11f, 5.5f); lineTo(4.5f, 12f); lineTo(11f, 18.5f) }

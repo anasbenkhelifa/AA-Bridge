@@ -25,9 +25,9 @@ import dev.caraalink.settings.AppSettings
 /**
  * A web page on the car screen. A browser view is one of this app's own
  * windows, so it can go on the car's display with nothing else set up: no
- * Shizuku, no screen sharing, and the phone stays free. YouTube and Claude
- * both run as web pages, laid out for the car's wide screen, with touch
- * working as it does on any page and sound going out through the phone.
+ * screen sharing, and the phone stays free. YouTube runs as a web page, laid
+ * out for the car's wide screen, with touch working as it does on any page
+ * and sound going out through the phone.
  *
  * Sign-ins are shared with [dev.caraalink.ui.WebSignInActivity], which is
  * where typing is comfortable: the phone.
@@ -102,6 +102,7 @@ class CarWebPresentation(
             onBackspace = { js(DELETE_SCRIPT) },
             onEnter = { js(ENTER_SCRIPT) },
             onHide = { showKeyboard(false) },
+            onVoice = { listen() },
         ).apply { visibility = View.GONE }
         setContentView(android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.VERTICAL
@@ -116,6 +117,33 @@ class CarWebPresentation(
 
     private fun showKeyboard(show: Boolean) {
         keyboard.visibility = if (show) View.VISIBLE else View.GONE
+    }
+
+    private var recognizer: android.speech.SpeechRecognizer? = null
+
+    /** Speak instead of typing: what the phone hears is typed at the cursor. */
+    private fun listen() {
+        if (context.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) return
+        if (!android.speech.SpeechRecognizer.isRecognitionAvailable(context)) return
+        val r = recognizer ?: android.speech.SpeechRecognizer.createSpeechRecognizer(context).also { recognizer = it }
+        r.setRecognitionListener(object : android.speech.RecognitionListener {
+            override fun onResults(results: Bundle?) {
+                val heard = results?.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull() ?: return
+                js(insertTextScript(heard))
+            }
+            override fun onReadyForSpeech(params: Bundle?) {}
+            override fun onBeginningOfSpeech() {}
+            override fun onRmsChanged(rmsdB: Float) {}
+            override fun onBufferReceived(buffer: ByteArray?) {}
+            override fun onEndOfSpeech() {}
+            override fun onError(error: Int) {}
+            override fun onPartialResults(partialResults: Bundle?) {}
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+        })
+        val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        keyboard.speechLanguage()?.let { intent.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, it) }
+        runCatching { r.startListening(intent) }
     }
 
     private fun js(script: String) {
@@ -149,6 +177,8 @@ class CarWebPresentation(
 
     override fun onStop() {
         main.removeCallbacks(tick)
+        runCatching { recognizer?.destroy() }
+        recognizer = null
         CookieManager.getInstance().flush()
         web?.let {
             it.stopLoading()
@@ -162,7 +192,6 @@ class CarWebPresentation(
 
     companion object {
         const val YOUTUBE = "https://m.youtube.com/"
-        const val CLAUDE = "https://claude.ai/"
 
         /** Reports when a text box gains or loses the cursor. Installed once per page. */
         const val FOCUS_SCRIPT = """(function(){if(window.__aab)return;window.__aab=1;
@@ -247,7 +276,6 @@ if(keep[0]&&e.form){if(e.form.requestSubmit)e.form.requestSubmit();else e.form.s
 
         private val SITE_APPS = mapOf(
             "youtube.com" to "com.google.android.youtube",
-            "claude.ai" to "com.anthropic.claude",
             "whatsapp.com" to "com.whatsapp",
             "tarteel.ai" to "com.mmmoussa.iqra",
             "quran.com" to "com.quran.labs.androidquran",

@@ -35,7 +35,17 @@ class CarSession(
     private var encoder: CarVideoEncoder? = null
     private var pxc: PxcChannel? = null
     private val features = CarFeatures(context)
-    private val display = CarDisplay(context, onOpenAa = { openAndroidAuto() }, onLeaveAa = { closeAa() })
+    private val display = CarDisplay(context, onOpenAa = { openAndroidAuto() }, onLeaveAa = { leaveAa() })
+
+    /**
+     * Home from Android Auto: the car shows its home screen and Android Auto keeps running behind it, so
+     * navigation and its voice carry on and coming back is instant. The picture is switched off where
+     * its surface goes away (showAaSurface).
+     */
+    private fun leaveAa() {
+        aaWatchdog.removeCallbacksAndMessages(null)
+        display.showStatus(CarScreen.CLOSED)
+    }
 
     /** The driver left Android Auto on purpose; stay on Closed until they tap to reopen. */
     private fun closeAa() {
@@ -378,12 +388,16 @@ class CarSession(
                     dec.start(surface)
                     aaDecoder = dec
                     myProbe?.attachVideoSink { ts, nal -> aaDecoder?.feed(ts, nal) }
+                    // Back on screen after running behind another one: ask the phone for its picture again.
+                    myProbe?.setVideoFocus(true)
                 } else {
-                    // End the session for real when leaving AA, not on a restart's teardown.
+                    // Leaving for another screen, not a restart's teardown: the session stays up without its
+                    // picture. One that was closed on purpose (closeAa) has been stopped already.
                     if (display.mode != dev.caraalink.video.CarDisplay.Mode.AA &&
                         dev.caraalink.aa.AaSessionProbe.active === myProbe
                     ) {
-                        myProbe?.stop()
+                        myProbe?.videoSink = null
+                        myProbe?.setVideoFocus(false)
                     }
                     aaDecoder?.stop()
                     aaDecoder = null
@@ -489,16 +503,10 @@ class CarSession(
             }
             return
         }
-        if (mode == CarDisplay.Mode.MIRROR || mode == CarDisplay.Mode.APPS || mode == CarDisplay.Mode.APP) {
-            // Outside Android Auto, Back belongs to the app on screen; anything set to close goes to the car home screen.
-            when (action) {
-                dev.caraalink.settings.CarKeyAction.BACK -> {
-                    val target = if (mode == CarDisplay.Mode.APP) dev.caraalink.video.CarAppPresentation.displayId else 0
-                    if (mode == CarDisplay.Mode.APPS) display.showStatus(CarScreen.CLOSED)
-                    else if (target >= 0) runCatching { dev.caraalink.shell.ShellBridge.service?.key(target, android.view.KeyEvent.KEYCODE_BACK) }
-                }
-                dev.caraalink.settings.CarKeyAction.CLOSE_AA, dev.caraalink.settings.CarKeyAction.HOME -> display.showStatus(CarScreen.CLOSED)
-                else -> {}
+        if (mode == CarDisplay.Mode.MIRROR) {
+            // The phone's own Back can't be pressed from here; anything set to close goes to the car home screen.
+            if (action == dev.caraalink.settings.CarKeyAction.CLOSE_AA || action == dev.caraalink.settings.CarKeyAction.HOME) {
+                display.showStatus(CarScreen.CLOSED)
             }
             return
         }

@@ -27,15 +27,6 @@ class PhoneMirrorTest {
     }
 
     @Test
-    fun `a touch on the picture lands on the same spot of the phone`() {
-        assertEquals(0f to 0f, PhoneMirror.toPhone(0f, 0f, 1080, 2400))
-        assertEquals(1079f to 2399f, PhoneMirror.toPhone(1f, 1f, 1080, 2400))
-        assertEquals(539.5f to 1199.5f, PhoneMirror.toPhone(0.5f, 0.5f, 1080, 2400))
-        // A finger that slides off the picture stays on the phone's edge.
-        assertEquals(1079f to 0f, PhoneMirror.toPhone(1.4f, -0.2f, 1080, 2400))
-    }
-
-    @Test
     fun `the picture is fitted whole inside the car screen`() {
         assertEquals(324 to 720, MirrorCarPresentation.fitInside(576, 1280, 1920, 720))
         assertEquals(1600 to 720, MirrorCarPresentation.fitInside(1280, 576, 1920, 720))

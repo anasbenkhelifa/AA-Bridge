@@ -19,7 +19,7 @@ import dev.caraalink.link.CarMotion
  * What sits beside or on top of Android Auto on the car screen. Android Auto
  * only draws 16:9 shapes, so on a wide screen a strip at the side costs it
  * nothing it could use well: the time, the speed, a way home, and YouTube
- * and Claude one tap from inside Android Auto.
+ * one tap from inside Android Auto.
  */
 object AaSidebar {
     /** The strip's share of the screen's width. */
@@ -49,7 +49,6 @@ object AaSidebar {
         })
         addView(button(context, context.getString(R.string.car_home), onHome), spaced(context, 22))
         addView(button(context, "YouTube") { onOpenWeb(CarWebPresentation.YOUTUBE) }, spaced(context, 10))
-        addView(button(context, "Claude") { onOpenWeb(CarWebPresentation.CLAUDE) }, spaced(context, 10))
     }
 
     private fun button(context: Context, label: String, onClick: () -> Unit) = TextView(context).apply {

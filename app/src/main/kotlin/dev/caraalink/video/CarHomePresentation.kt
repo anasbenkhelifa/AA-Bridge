@@ -32,14 +32,13 @@ import dev.caraalink.settings.AppSettings
  * The car's home screen, shown whenever Android Auto isn't. On the left, a
  * glass panel with the time, the date, the speed and the weather, and the
  * music buttons under it. On the right, everything that can be opened, as a
- * grid of icons the way a phone or CarPlay lays them out: Android Auto, web
- * apps such as YouTube and Claude, the phone's apps, and the phone's screen.
+ * grid of icons the way a phone or CarPlay lays them out: Android Auto, the
+ * web apps chosen in Advanced (YouTube to begin with), and the phone's screen.
  */
 class CarHomePresentation(
     context: Context,
     display: Display,
     private val onOpenAa: () -> Unit,
-    private val onOpenApps: () -> Unit,
     private val onOpenWeb: (url: String) -> Unit,
     private val onOpenMirror: () -> Unit,
 ) : Presentation(context, display) {
@@ -47,6 +46,10 @@ class CarHomePresentation(
     private val main = Handler(Looper.getMainLooper())
     private lateinit var speed: TextView
     private lateinit var weather: TextView
+    private lateinit var prayerName: TextView
+    private lateinit var prayerTime: TextView
+    private var prayer: PrayerCard.Next? = null
+    private var prayerCheckedAt = 0L
 
     private val tick = object : Runnable {
         override fun run() {
@@ -54,8 +57,25 @@ class CarHomePresentation(
             val temperature = Weather.line(context)
             weather.text = temperature
             (weather.parent as View).visibility = if (temperature.isEmpty()) View.GONE else View.VISIBLE
+            showPrayer()
             main.postDelayed(this, 1_000)
         }
+    }
+
+    /** The next prayer and how long until it; looked up again once it has passed, and every few minutes as the car moves. */
+    private fun showPrayer() {
+        val now = System.currentTimeMillis()
+        val known = prayer
+        if (known == null || known.at.time <= now || now - prayerCheckedAt > 5 * 60_000) {
+            prayer = PrayerCard.current(context)
+            prayerCheckedAt = now
+        }
+        val next = prayer
+        (prayerName.parent as View).visibility = if (next == null) View.GONE else View.VISIBLE
+        if (next == null) return
+        prayerName.text = context.getString(PrayerCard.nameOf(next.prayer))
+        val at = android.text.format.DateFormat.getTimeFormat(context).format(next.at)
+        prayerTime.text = "$at  ·  ${PrayerCard.countdown(next.at.time - now)}"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,7 +95,6 @@ class CarHomePresentation(
     override fun onStart() {
         super.onStart()
         if (AppSettings.carWeather(context)) Weather.refresh(context)
-        dev.caraalink.shell.ShellBridge.connect(context)
         tick.run()
     }
 
@@ -103,7 +122,7 @@ class CarHomePresentation(
         addView(TextClock(context).apply {
             format12Hour = "h:mm"
             format24Hour = "HH:mm"
-            textSize = 104f
+            textSize = 88f
             setTextColor(Color.WHITE)
             typeface = Typeface.create("sans-serif-thin", Typeface.NORMAL)
             includeFontPadding = false
@@ -116,6 +135,23 @@ class CarHomePresentation(
         weather = chipValue()
         chips.addView(chip(weather, null), wrap().apply { marginStart = dp(10) })
         addView(chips, wrap().apply { topMargin = dp(10) })
+
+        prayerName = TextView(context).apply {
+            textSize = 22f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        }
+        prayerTime = TextView(context).apply {
+            textSize = 17f
+            setTextColor(CarWidgets.ACCENT)
+        }
+        addView(LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            background = GradientDrawable().apply { setColor(0x14FFFFFF); cornerRadius = dp(18).toFloat() }
+            setPadding(dp(18), dp(10), dp(18), dp(12))
+            addView(prayerName)
+            addView(prayerTime)
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(14) })
 
         addView(View(context), LinearLayout.LayoutParams(1, 0, 1f))
         addView(media())
@@ -179,14 +215,10 @@ class CarHomePresentation(
     private fun entries(): List<Entry> {
         val pm = context.packageManager
         fun appIcon(pkg: String?) = pkg?.let { runCatching { pm.getApplicationIcon(it) }.getOrNull() }
-        val pages = listOf(
-            CarWebPresentation.Companion.Page("YouTube", CarWebPresentation.YOUTUBE),
-            CarWebPresentation.Companion.Page("Claude", CarWebPresentation.CLAUDE),
-        ) + CarWebPresentation.parsePages(AppSettings.carWebPages(context))
+        val pages = CarWebPresentation.parsePages(AppSettings.carWebPages(context))
         return buildList {
             add(Entry(context.getString(R.string.car_android_auto), appIcon(GEARHEAD), null, onOpenAa))
             for (page in pages) add(Entry(page.name, appIcon(CarWebPresentation.appFor(page.url)), null) { onOpenWeb(page.url) })
-            add(Entry(context.getString(R.string.car_apps), null, CarArt.Symbol.GRID, onOpenApps))
             add(Entry(context.getString(R.string.car_phone_screen), null, CarArt.Symbol.PHONE, onOpenMirror))
         }
     }

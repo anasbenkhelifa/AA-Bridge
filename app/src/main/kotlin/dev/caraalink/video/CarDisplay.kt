@@ -23,7 +23,7 @@ class CarDisplay(
     private val onOpenAa: () -> Unit,
     private val onLeaveAa: () -> Unit = {},
 ) {
-    enum class Mode { STATUS, AA, MIRROR, APPS, APP, WEB }
+    enum class Mode { STATUS, AA, MIRROR, WEB }
 
     private val main = Handler(Looper.getMainLooper())
     private val logger = DiagnosticLogger(context, "car-display")
@@ -87,21 +87,7 @@ class CarDisplay(
         showCurrent()
     }
 
-    /** The grid of the phone's apps, opened from the car home screen. */
-    fun showApps() = main.post {
-        screen = CarScreen.CLOSED
-        mode = Mode.APPS
-        showCurrent()
-    }
-
-    /** One app ("package/class") on a screen of its own. */
-    private fun showApp(component: String) = main.post {
-        appComponent = component
-        mode = Mode.APP
-        showCurrent()
-    }
-
-    /** A web page, opened from the car home screen. */
+    /** A web page, opened from the car home screen or the strip beside Android Auto. */
     private fun showWeb(url: String) = main.post {
         screen = CarScreen.CLOSED
         webUrl = url
@@ -119,7 +105,6 @@ class CarDisplay(
     }
 
     private var webUrl: String? = null
-    private var appComponent: String? = null
     private var aaVideoSize: Pair<Int, Int>? = null
     private var aaMargin: Pair<Int, Int> = 0 to 0
     private var aaOnSurface: ((Surface?) -> Unit)? = null
@@ -132,13 +117,11 @@ class CarDisplay(
             when {
                 mode == Mode.AA && aaVideoSize != null -> aaPresentation(display)
                 mode == Mode.MIRROR -> MirrorCarPresentation(context, display, ::goHome)
-                mode == Mode.APPS -> CarAppsPresentation(context, display, ::showApp, ::goHome)
                 mode == Mode.WEB && webUrl != null -> CarWebPresentation(context, display, webUrl!!, ::goHome)
-                mode == Mode.APP && appComponent != null -> CarAppPresentation(context, display, appComponent!!, ::goHome)
                 else -> {
                     mode = Mode.STATUS
                     // Closed is nothing going wrong, so it gets the home screen; the rest are messages.
-                    if (screen == CarScreen.CLOSED) CarHomePresentation(context, display, onOpenAa, ::showApps, ::showWeb, ::showMirror)
+                    if (screen == CarScreen.CLOSED) CarHomePresentation(context, display, onOpenAa, ::showWeb, ::showMirror)
                     else CarStatusPresentation(context, display, screen, onOpenAa)
                 }
             }.also { it.show() }

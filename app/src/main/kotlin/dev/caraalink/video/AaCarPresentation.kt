@@ -46,7 +46,7 @@ class AaCarPresentation(
     private val onTouch: (pointers: List<Triple<Int, Int, Int>>, actionIndex: Int, action: Int) -> Unit,
     /** The side strip's home button: leave Android Auto for the car home screen. */
     private val onHome: () -> Unit = {},
-    /** The side strip's YouTube and Claude buttons. */
+    /** The side strip's YouTube button. */
     private val onOpenWeb: (url: String) -> Unit = {},
 ) : Presentation(context, display) {
 
@@ -183,7 +183,7 @@ class AaCarPresentation(
         }
         root.addView(starting, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         // Without the strip, a small Home button still floats over Android Auto: one tap to the car home screen
-        // and its YouTube, Claude and app tiles, on cars whose own Home button never reaches the phone.
+        // and its tiles, on cars whose own Home button never reaches the phone.
         if (strip == 0 && dev.caraalink.settings.AppSettings.aaHomeButton(context)) CarNav.attach(root, onHome)
         dev.caraalink.diagnostics.PerfStats.attachHud(context, root)
         setContentView(root)

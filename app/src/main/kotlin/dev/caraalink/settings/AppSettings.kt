@@ -219,8 +219,16 @@ object AppSettings {
     /** Connecting shows the car home screen; off opens Android Auto straight away, as the app always used to. */
     fun startOnHome(context: Context): Boolean = prefs(context).getBoolean("start_on_home", true)
 
-    /** More web pages for the car home screen, as typed: `Tarteel=tarteel.ai, Quran=quran.com`. */
-    fun carWebPages(context: Context): String? = prefs(context).getString("car_web_pages", null)
+    /** The web apps on the car home screen, in order, as typed: `YouTube=m.youtube.com, Tarteel=tarteel.ai`. */
+    fun carWebPages(context: Context): String = prefs(context).getString("car_web_pages", null) ?: DEFAULT_WEB_PAGES
+
+    const val DEFAULT_WEB_PAGES = "YouTube=m.youtube.com"
+
+    /** Show the next prayer on the car home screen (dev.caraalink.video.PrayerCard). */
+    fun carPrayer(context: Context): Boolean = prefs(context).getBoolean("car_prayer", true)
+
+    /** The name of the adhan `CalculationMethod` the prayer times follow. */
+    fun prayerMethod(context: Context): String? = prefs(context).getString("car_prayer_method", null)
 
     /** Keep the per-car settings (CarProfiles) separately for each head unit and bring them back when it connects. */
     fun rememberPerCar(context: Context): Boolean =

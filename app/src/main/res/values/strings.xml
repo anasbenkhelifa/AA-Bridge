@@ -139,15 +139,18 @@
     <string name="mirror_notif_text">Tap, then allow screen sharing.</string>
     <string name="mirror_allow_on_phone">On your phone, tap the AA Bridge notification and allow screen sharing.</string>
     <string name="mirror_moving">The phone screen is hidden while the car is moving.</string>
-    <string name="car_apps">Apps</string>
-    <string name="settings_car_apps">Apps on the car screen</string>
-    <string name="apps_ready">Ready. Open Apps from the car\'s home screen.</string>
-    <string name="apps_need_install">Needs the free Shizuku app. Tap to get it.</string>
-    <string name="apps_need_start">Shizuku isn\'t running. Tap to open it and start it; it has to be started again after the phone restarts.</string>
-    <string name="apps_need_allow">Tap to let AA Bridge use Shizuku.</string>
     <string name="web_moving">The picture is hidden while the car is moving. Sound keeps playing.</string>
     <string name="settings_signin_youtube">YouTube on the car screen</string>
-    <string name="settings_signin_claude">Claude on the car screen</string>
     <string name="settings_signin_body">Opens it here so you can sign in with the phone\'s keyboard. The car screen then stays signed in.</string>
     <string name="car_android_auto" translatable="false">Android Auto</string>
+    <string name="prayer_fajr">Fajr</string>
+    <string name="prayer_sunrise">Sunrise</string>
+    <string name="prayer_dhuhr">Dhuhr</string>
+    <string name="prayer_asr">Asr</string>
+    <string name="prayer_maghrib">Maghrib</string>
+    <string name="prayer_isha">Isha</string>
+    <string name="settings_last_drive">Last drive</string>
+    <string name="drive_summary">%1$d min, %2$s, Android Auto restarted %3$d times.</string>
+    <string name="drive_overheated">The phone got hot and the picture was lowered.</string>
+    <string name="settings_report_car">Report how it works in my car</string>
 </resources>

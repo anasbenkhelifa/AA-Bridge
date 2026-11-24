@@ -93,12 +93,12 @@
         <SwitchPreferenceCompat
             android:key="aa_home_button"
             android:title="Home button over Android Auto"
-            android:summary="A small button at the edge of Android Auto that goes to the car home screen, where YouTube, Claude and the other tiles are."
+            android:summary="A small button at the edge of Android Auto that goes to the car home screen, where YouTube and the other tiles are."
             android:defaultValue="true" />
         <SwitchPreferenceCompat
             android:key="aa_sidebar"
             android:title="Side strip next to Android Auto"
-            android:summary="A strip at the edge of the car screen with the time, the speed, a home button, and YouTube and Claude buttons. Android Auto is drawn for the space that is left. Best on wide screens."
+            android:summary="A strip at the edge of the car screen with the time, the speed, a home button and a YouTube button. Android Auto is drawn for the space that is left. Best on wide screens."
             android:defaultValue="false" />
         <SwitchPreferenceCompat
             android:key="aa_speed_badge"
@@ -130,8 +130,21 @@
             android:defaultValue="true" />
         <EditTextPreference
             android:key="car_web_pages"
-            android:title="More web apps"
-            android:summary="Adds tiles to the car home screen next to YouTube and Claude. Type names and addresses separated by commas, like: Tarteel=tarteel.ai, Quran=quran.com, WhatsApp=web.whatsapp.com" />
+            android:title="Web apps on the car home screen"
+            android:defaultValue="YouTube=m.youtube.com"
+            android:summary="The tiles on the car home screen, in this order. Type names and addresses separated by commas, like: YouTube=m.youtube.com, Tarteel=tarteel.ai, Quran=quran.com. Remove one to hide it." />
+        <SwitchPreferenceCompat
+            android:key="car_prayer"
+            android:title="Next prayer on the car home screen"
+            android:summary="Worked out on the phone from its position; nothing is sent anywhere."
+            android:defaultValue="true" />
+        <ListPreference
+            android:key="car_prayer_method"
+            android:title="Prayer time method"
+            android:summary="Choose the one your mosque or prayer app uses, or the times will differ by a few minutes."
+            android:entries="@array/prayer_method_entries"
+            android:entryValues="@array/prayer_method_values"
+            android:defaultValue="MUSLIM_WORLD_LEAGUE" />
         <SwitchPreferenceCompat
             android:key="car_weather"
             android:title="Weather on the car home screen"

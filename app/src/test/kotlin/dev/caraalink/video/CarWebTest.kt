@@ -60,7 +60,6 @@ class CarWebTest {
         assertEquals("Youtube", CarWebPresentation.siteName("https://m.youtube.com/"))
         assertEquals("Whatsapp", CarWebPresentation.siteName("https://web.whatsapp.com/x"))
         assertEquals("com.google.android.youtube", CarWebPresentation.appFor(CarWebPresentation.YOUTUBE))
-        assertEquals("com.anthropic.claude", CarWebPresentation.appFor(CarWebPresentation.CLAUDE))
         assertNull(CarWebPresentation.appFor("https://notyoutube.com.example.org/"))
         assertNull(CarWebPresentation.appFor("https://example.org/"))
     }

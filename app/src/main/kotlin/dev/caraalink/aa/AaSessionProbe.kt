@@ -101,6 +101,9 @@ class AaSessionProbe(
     /** Like setting [videoSink] directly, but also replays cached SPS/PPS + last keyframe if we have them. */
     fun attachVideoSink(sink: (timestampUs: Long, nal: ByteArray) -> Unit) = video.attachSink(sink)
 
+    /** Whether Android Auto's picture is on the car screen; see [AaVideoChannel.setFocus]. */
+    fun setVideoFocus(onScreen: Boolean) = video.setFocus(onScreen)
+
     /** One touch event to the phone; see [AaInputChannel.sendTouch]. No-op while no session is up. */
     fun sendTouch(pointers: List<Triple<Int, Int, Int>>, actionIndex: Int, action: Int) =
         input.sendTouch(pointers, actionIndex, action)

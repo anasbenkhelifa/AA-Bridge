@@ -41,7 +41,7 @@ object Weather {
     fun refresh(context: Context) {
         if (fetching || System.currentTimeMillis() - fetchedAt < REFRESH_MS) return
         if (context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) return
-        val lm = context.getSystemService(LocationManager::class.java)
+        val lm = context.applicationContext.getSystemService(LocationManager::class.java)
         val here = runCatching { lm.getProviders(true).mapNotNull { lm.getLastKnownLocation(it) }.maxByOrNull { it.time } }
             .getOrNull() ?: return
         fetching = true

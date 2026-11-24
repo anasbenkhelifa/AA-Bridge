@@ -94,6 +94,7 @@ class UsbLinkForegroundService : Service() {
             handler.post { onWirelessStreaming() }
         }
         if (it.phase == ConnectionPhase.STREAMING) {
+            dev.caraalink.diagnostics.DriveLog.onStreaming(it.link)
             handler.post { transportReconnectAttempts = 0 }
             AppSettings.setCarConnectedOnce(this)
         }
@@ -547,6 +548,7 @@ class UsbLinkForegroundService : Service() {
 
     /** Says why Android Auto just restarted with a softer picture; quiet, the driver isn't looking at the phone. */
     private fun notifyVideoLowered() {
+        dev.caraalink.diagnostics.DriveLog.onOverheated()
         val n = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_bridge)
             .setContentTitle(getString(R.string.thermal_title))
@@ -612,6 +614,7 @@ class UsbLinkForegroundService : Service() {
         sniffer?.stop()
         adbProbe?.stop()
         adbProbe = null
+        dev.caraalink.diagnostics.DriveLog.onEnded(this)
         dev.caraalink.video.ThermalGuard.stop(this)
         dev.caraalink.mirror.PhoneMirror.stop()
         projecting = false

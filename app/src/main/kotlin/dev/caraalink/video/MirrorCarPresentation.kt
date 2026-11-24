@@ -1,6 +1,5 @@
 package dev.caraalink.video
 
-import android.annotation.SuppressLint
 import android.app.Presentation
 import android.content.Context
 import android.graphics.Color
@@ -8,10 +7,8 @@ import android.graphics.SurfaceTexture
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.SystemClock
 import android.view.Display
 import android.view.Gravity
-import android.view.MotionEvent
 import android.view.Surface
 import android.view.TextureView
 import android.view.View
@@ -24,7 +21,7 @@ import dev.caraalink.link.Motion
 import dev.caraalink.mirror.PhoneMirror
 import dev.caraalink.settings.AppSettings
 
-/** The phone's screen on the car screen, fitted whole, with the car's touches played back on the phone. */
+/** The phone's screen on the car screen, fitted whole. A picture only: Android gives an ordinary app no way to touch another app. */
 class MirrorCarPresentation(context: Context, display: Display, private val onHome: () -> Unit) : Presentation(context, display) {
 
     private val main = Handler(Looper.getMainLooper())
@@ -33,7 +30,6 @@ class MirrorCarPresentation(context: Context, display: Display, private val onHo
     private lateinit var cover: TextView
     private var pictureWidth = 0
     private var pictureHeight = 0
-    private var downAt = 0L
 
     private val tick = object : Runnable {
         override fun run() {
@@ -42,7 +38,6 @@ class MirrorCarPresentation(context: Context, display: Display, private val onHo
         }
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val root = FrameLayout(context).apply { setBackgroundColor(Color.BLACK) }
@@ -63,7 +58,6 @@ class MirrorCarPresentation(context: Context, display: Display, private val onHo
             }
             override fun onSurfaceTextureUpdated(st: SurfaceTexture) {}
         }
-        texture.setOnTouchListener { v, ev -> onPictureTouch(v, ev); true }
         root.addView(texture, FrameLayout.LayoutParams(1, 1, Gravity.CENTER))
         root.addOnLayoutChangeListener { _, l, t, r, b, _, _, _, _ -> fit(r - l, b - t) }
 
@@ -71,16 +65,13 @@ class MirrorCarPresentation(context: Context, display: Display, private val onHo
         cover = overlay(Color.BLACK).apply { setText(R.string.mirror_moving) }
         root.addView(message, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         root.addView(cover, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        CarNav.attach(root, onHome, onBack = {
-            runCatching { dev.caraalink.shell.ShellBridge.service?.key(Display.DEFAULT_DISPLAY, android.view.KeyEvent.KEYCODE_BACK) }
-        })
+        CarNav.attach(root, onHome)
         setContentView(root)
     }
 
     override fun onStart() {
         super.onStart()
         PhoneMirror.onChanged = { refresh() }
-        dev.caraalink.shell.ShellBridge.connect(context)
         if (!PhoneMirror.allowed) PhoneMirror.askForConsent(context)
         tick.run()
     }
@@ -117,18 +108,6 @@ class MirrorCarPresentation(context: Context, display: Display, private val onHo
             lp.height = h
             texture.post { texture.layoutParams = lp }
         }
-    }
-
-    /** The car's touch, placed on the same spot of the phone's own screen. Needs the Shizuku helper; without it the picture is view-only. */
-    private fun onPictureTouch(v: View, ev: MotionEvent) {
-        val service = dev.caraalink.shell.ShellBridge.service ?: return
-        if (v.width <= 0 || v.height <= 0) return
-        val action = ev.actionMasked
-        if (action != MotionEvent.ACTION_DOWN && action != MotionEvent.ACTION_MOVE && action != MotionEvent.ACTION_UP) return
-        if (action == MotionEvent.ACTION_DOWN) downAt = SystemClock.uptimeMillis()
-        val phone = PhoneMirror.phoneSize(context)
-        val (x, y) = PhoneMirror.toPhone(ev.x / v.width, ev.y / v.height, phone.x, phone.y)
-        runCatching { service.touch(Display.DEFAULT_DISPLAY, action, x, y, downAt) }
     }
 
     companion object {

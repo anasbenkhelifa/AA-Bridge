@@ -134,14 +134,17 @@
     <string name="mirror_notif_text">اضغط هنا، ثم اسمح بمشاركة الشاشة.</string>
     <string name="mirror_allow_on_phone">على هاتفك، اضغط على إشعار AA Bridge واسمح بمشاركة الشاشة.</string>
     <string name="mirror_moving">شاشة الهاتف مخفية أثناء سير السيارة.</string>
-    <string name="car_apps">التطبيقات</string>
-    <string name="settings_car_apps">التطبيقات على شاشة السيارة</string>
-    <string name="apps_ready">جاهز. افتح «التطبيقات» من الشاشة الرئيسية في السيارة.</string>
-    <string name="apps_need_install">يحتاج إلى تطبيق Shizuku المجاني. اضغط للحصول عليه.</string>
-    <string name="apps_need_start">تطبيق Shizuku لا يعمل. اضغط لفتحه وتشغيله؛ يجب تشغيله من جديد بعد إعادة تشغيل الهاتف.</string>
-    <string name="apps_need_allow">اضغط للسماح لـ AA Bridge باستخدام Shizuku.</string>
     <string name="web_moving">الصورة مخفية أثناء سير السيارة. الصوت يستمر.</string>
     <string name="settings_signin_youtube">YouTube على شاشة السيارة</string>
-    <string name="settings_signin_claude">Claude على شاشة السيارة</string>
     <string name="settings_signin_body">يفتحه هنا لتسجيل الدخول بلوحة مفاتيح الهاتف. تبقى شاشة السيارة مسجّلة الدخول بعدها.</string>
+    <string name="prayer_fajr">الفجر</string>
+    <string name="prayer_sunrise">الشروق</string>
+    <string name="prayer_dhuhr">الظهر</string>
+    <string name="prayer_asr">العصر</string>
+    <string name="prayer_maghrib">المغرب</string>
+    <string name="prayer_isha">العشاء</string>
+    <string name="settings_last_drive">آخر رحلة</string>
+    <string name="drive_summary">%1$d دقيقة، %2$s، أُعيد تشغيل Android Auto %3$d مرات.</string>
+    <string name="drive_overheated">سخن الهاتف فتم تخفيف الصورة.</string>
+    <string name="settings_report_car">أبلغ عن أدائه في سيارتي</string>
 </resources>

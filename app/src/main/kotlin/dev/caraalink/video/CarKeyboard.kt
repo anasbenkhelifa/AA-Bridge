@@ -21,6 +21,8 @@ class CarKeyboard(
     private val onBackspace: () -> Unit,
     private val onEnter: () -> Unit,
     private val onHide: () -> Unit,
+    /** The microphone key; left out when null. */
+    private val onVoice: (() -> Unit)? = null,
 ) : LinearLayout(context) {
 
     private var layout = Layout.ENGLISH
@@ -56,12 +58,16 @@ class CarKeyboard(
             shift = false
             build()
         })
-        bottom.addView(key(" ", KEY, 5f) { onText(" ") })
+        if (onVoice != null) bottom.addView(key(MIC, SPECIAL, 1.3f, onVoice))
+        bottom.addView(key(" ", KEY, 4.4f) { onText(" ") })
         bottom.addView(key("⌫", SPECIAL, 1.5f, onBackspace))
         bottom.addView(key("⏎", ACCENT, 1.8f, onEnter))
         bottom.addView(key("▾", SPECIAL, 1.2f, onHide))
         addView(bottom, LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(ROW_DP)))
     }
+
+    /** The language tag to listen in: Arabic while the Arabic letters are up, else the phone's own. */
+    fun speechLanguage(): String? = if (lettersLayout == Layout.ARABIC) "ar" else null
 
     private fun key(label: String, color: Int, weight: Float, onClick: () -> Unit) = TextView(context).apply {
         text = label
@@ -73,6 +79,14 @@ class CarKeyboard(
         isClickable = true
         // Never takes focus, so the page keeps its cursor where it is.
         isFocusable = false
+        if (label == MIC) {
+            // Drawn, not typed: the microphone character is an emoji on most phones.
+            text = ""
+            val inset = dp(15)
+            background = android.graphics.drawable.LayerDrawable(arrayOf(background, CarArt.Glyph(CarArt.Symbol.MIC, TEXT))).apply {
+                setLayerInset(1, 0, inset, 0, inset)
+            }
+        }
         setOnClickListener { onClick() }
         layoutParams = LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, weight).apply {
             marginStart = dp(3); marginEnd = dp(3); topMargin = dp(3); bottomMargin = dp(3)
@@ -85,6 +99,7 @@ class CarKeyboard(
 
     companion object {
         private const val ROW_DP = 58
+        private const val MIC = "mic"
         private const val BACKGROUND = 0xFF070B0E.toInt()
         private const val KEY = 0xFF1F2E36.toInt()
         private const val SPECIAL = 0xFF14212A.toInt()
