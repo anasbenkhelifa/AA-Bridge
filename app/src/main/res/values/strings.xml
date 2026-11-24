@@ -153,4 +153,12 @@
     <string name="drive_summary">%1$d min, %2$s, Android Auto restarted %3$d times.</string>
     <string name="drive_overheated">The phone got hot and the picture was lowered.</string>
     <string name="settings_report_car">Report how it works in my car</string>
+    <string name="help_stuck_q">Stuck on Starting, or a black screen</string>
+    <string name="help_stuck_a">Android Auto itself is usually the cause. Update it to the newest version. If it still hangs, open Settings → Apps → Android Auto, uninstall its updates, install it again, then start its server.</string>
+    <string name="help_qdlink_q">Stuck on Connecting in a car with QDLink</string>
+    <string name="help_qdlink_a">Uninstall the QDLink app from your phone, force stop AA Bridge and Android Auto, then plug in again. QDLink cars work with a cable only.</string>
+    <string name="help_youtube_q">YouTube isn\'t in Android Auto</string>
+    <string name="help_youtube_a">Google doesn\'t allow it there. Use the YouTube tile on the car\'s home screen instead: tap the Home button at the left edge of Android Auto.</string>
+    <string name="help_noask_q">Nothing happens when I plug in</string>
+    <string name="help_noask_a">Use a data cable, not a charge-only one, and the car\'s phone-link USB port. If the phone never asks which app to open, the car talks to phones in a way AA Bridge doesn\'t support yet. Use Send logs and Report how it works in my car.</string>
 </resources>

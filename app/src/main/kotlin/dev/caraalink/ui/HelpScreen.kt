@@ -26,6 +26,11 @@ fun HelpScreen(onBack: () -> Unit, onRunSetup: () -> Unit) {
             HelpCard(R.string.help_blank_q, R.string.help_blank_a, showMenu = true)
             HelpCard(R.string.help_tap_q, R.string.help_tap_a, showMenu = true)
             HelpCard(R.string.help_ask_q, R.string.help_ask_a, showMenu = false)
+            // The causes behind most reports on the project's issue tracker, each confirmed there by the person it happened to.
+            HelpCard(R.string.help_stuck_q, R.string.help_stuck_a, showMenu = false)
+            HelpCard(R.string.help_qdlink_q, R.string.help_qdlink_a, showMenu = false)
+            HelpCard(R.string.help_youtube_q, R.string.help_youtube_a, showMenu = false)
+            HelpCard(R.string.help_noask_q, R.string.help_noask_a, showMenu = false)
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick = {

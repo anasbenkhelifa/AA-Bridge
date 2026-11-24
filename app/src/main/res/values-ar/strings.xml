@@ -147,4 +147,12 @@
     <string name="drive_summary">%1$d دقيقة، %2$s، أُعيد تشغيل Android Auto %3$d مرات.</string>
     <string name="drive_overheated">سخن الهاتف فتم تخفيف الصورة.</string>
     <string name="settings_report_car">أبلغ عن أدائه في سيارتي</string>
+    <string name="help_stuck_q">يتوقف عند «جارٍ التشغيل» أو تظهر شاشة سوداء</string>
+    <string name="help_stuck_a">السبب غالبًا هو Android Auto نفسه. حدّثه إلى أحدث إصدار. إذا استمرت المشكلة، افتح الإعدادات ← التطبيقات ← Android Auto، أزل تحديثاته، ثم ثبّته من جديد وشغّل خادمه.</string>
+    <string name="help_qdlink_q">يتوقف عند «جارٍ الاتصال» في سيارة تعمل بـ QDLink</string>
+    <string name="help_qdlink_a">أزل تطبيق QDLink من هاتفك، وأوقف AA Bridge و Android Auto إجباريًا، ثم وصّل الكابل من جديد. سيارات QDLink تعمل بالكابل فقط.</string>
+    <string name="help_youtube_q">YouTube غير موجود في Android Auto</string>
+    <string name="help_youtube_a">Google لا تسمح به هناك. استخدم مربع YouTube في الشاشة الرئيسية للسيارة: اضغط زر الرئيسية على الحافة اليسرى من Android Auto.</string>
+    <string name="help_noask_q">لا يحدث شيء عند توصيل الكابل</string>
+    <string name="help_noask_a">استخدم كابل بيانات لا كابل شحن فقط، ومنفذ USB الخاص بربط الهاتف في السيارة. إذا لم يسألك الهاتف أي تطبيق يفتح، فالسيارة تتواصل مع الهواتف بطريقة لا يدعمها AA Bridge بعد. استخدم «إرسال السجلات» و«أبلغ عن أدائه في سيارتي».</string>
 </resources>
